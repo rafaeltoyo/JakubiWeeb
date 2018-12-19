@@ -1,9 +1,12 @@
 import sqlite3
+from ..config import Config
+
 
 class Database(object):
 
-    def __init__(self, config, filename: str = "database.db"):
-        self.conn = sqlite3.connect(filename)
+    def __init__(self, config: Config, filename: str = "database.db"):
+        self.conn = sqlite3.connect(config.projectpath + filename)
+        self.__config = config
 
     def __del__(self):
         self.conn.close()

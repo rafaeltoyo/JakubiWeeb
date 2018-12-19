@@ -40,11 +40,12 @@ class Config(object):
 
     def __init__(self, project: str = "JakubiWeeb", filename: str = "config.json"):
         self.project = project
-        self.__configpath = self.__get_project_name() + filename
+        self.projectpath = self.__get_project_path()
+        self.__configpath = self.projectpath + filename
         self.config = ConfigData()
         self.load()
 
-    def __get_project_name(self):
+    def __get_project_path(self):
         p = os.path.abspath(__file__).split(os.path.sep)
         if os.name == "nt":
             p[0] += os.path.sep

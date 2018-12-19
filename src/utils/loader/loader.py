@@ -37,7 +37,7 @@ class FileLoader(object):
                 if ext is None or ext == "" or ext == "all":
                     yield (item, itempath)
                 elif ext.startswith('.') and item.endswith(ext) or item.endswith('.' + ext):
-                    yield (item, itempath)
+                    yield (item.replace(ext, ''), itempath)
 
     def search_mp3(self):
         return (p for p in self.__explore(path=self.path, ext=".mp3", deep=True))
