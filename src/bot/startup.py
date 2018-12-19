@@ -1,4 +1,6 @@
 import os
+import discord
+from discord.ext import commands
 
 from utils.config import Config
 from utils.db import Database
@@ -7,8 +9,20 @@ from utils.loader.loader import FileLoader
 from model.anime import Anime
 from model.music import Music
 
+from bot import Jakubiweeb
+
 
 def startup():
+    if not discord.opus.is_loaded():
+        # the 'opus' library here is opus.dll on windows
+        # or libopus.so on linux in the current directory
+        # you should replace this with the location the
+        # opus library is located in and with the proper filename.
+        # note that on windows this DLL is automatically provided for you
+        # https://discordpy.readthedocs.io/en/latest/api.html#embed
+
+        discord.opus.load_opus('opus')
+
     config = Config(project="JakubiWeeb", filename="config.json")
     database = Database(config=config, filename="database.db")
 
@@ -33,6 +47,16 @@ def startup():
 
     cursor.close()
     print(''.join([str(animes[a]) + '\n' for a in animes]))
+
+    bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.config.bot_prefix),
+                       description='Bem entendido isso? Resolve o Cascode ai ...')
+    bot.add_cog(Jakubiweeb(bot))
+
+    @bot.event
+    async def on_ready():
+        print('Logged in as:\n{0} (ID: {0.id})'.format(bot.user))
+
+    bot.run(config.config.bot_token)
 
 
 def startup_init():
