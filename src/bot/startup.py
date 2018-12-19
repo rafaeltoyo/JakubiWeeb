@@ -1,5 +1,4 @@
 import os
-from mutagen.mp3 import MP3
 
 from utils.config import Config
 from utils.db import Database
