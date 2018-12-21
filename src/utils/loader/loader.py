@@ -1,4 +1,5 @@
 import os
+import re
 
 from model.music import Music
 from model.anime import Anime
@@ -40,12 +41,26 @@ class FileLoader(object):
                     yield (item.replace(ext, ''), itempath)
 
     def search_mp3(self):
+        """
+        Example: MP3 search
+        :return:
+        """
         return (p for p in self.__explore(path=self.path, ext=".mp3", deep=True))
 
     def search_animes(self):
+        """
+        Anime search
+        :return:
+        """
         animes = []
         for data in self.__explore(path=self.path, ext="dir", deep=False):
             anime = Anime(*data)
+
+            match = re.search('^(- |@ )(.*)', anime.name)
+            print(match.group(2) if match is not None else "")
+            if match is not None and len(match.group(2)) > 0:
+                anime.name = match.group(2)
+
             for (music, folder) in self.__explore(path=anime.folder, ext=".mp3", deep=True):
                 anime.append(Music(music, folder))
             animes.append(anime)

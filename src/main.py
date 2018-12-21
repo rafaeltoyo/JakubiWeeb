@@ -1,3 +1,7 @@
-from bot.startup import startup
+from bot.controller import Controller
 
-startup()
+c = Controller()
+try:
+    c.run()
+finally:
+    del c

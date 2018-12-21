@@ -106,31 +106,34 @@ class VoiceState:
 
     async def audio_player_task(self):
         while True:
-            # CLEAR next song flag
-            self.play_next_song.clear()
+            try:
+                # CLEAR next song flag
+                self.play_next_song.clear()
 
-            # Get next song or wait
-            self.current = await self.songs.get()  # type: Request
+                # Get next song or wait
+                self.current = await self.songs.get()  # type: Request
 
-            embed = discord.Embed(
-                title='Now playing:',
-                description=str(self.current) + "[%s]" % self.current.message.author.mention,
-                color=discord.Color.dark_blue()
-            )
-            embed.set_author(
-                name=self.current.message.author.nick,
-                icon_url=self.current.message.author.avatar_url
-            )
+                embed = discord.Embed(
+                    title='Now playing:',
+                    description=str(self.current) + "[%s]" % self.current.message.author.mention,
+                    color=discord.Color.dark_blue()
+                )
+                embed.set_author(
+                    name=self.current.message.author.nick,
+                    icon_url=self.current.message.author.avatar_url
+                )
 
-            self.bot.delete_message(self.current.message)
-            msg = await self.bot.send_message(self.current.message.channel, embed=embed)  # type: discord.Message
+                self.bot.delete_message(self.current.message)
+                msg = await self.bot.send_message(self.current.message.channel, embed=embed)  # type: discord.Message
 
-            self.current.player.volume = self.volume
-            self.current.player.start()
+                self.current.player.volume = self.volume
+                self.current.player.start()
 
-            # WAIT next song flag
-            await self.play_next_song.wait()
-            self.bot.delete_message(msg)
+                # WAIT next song flag
+                await self.play_next_song.wait()
+                self.bot.delete_message(msg)
+            except Exception as e:
+                print("Error in VoiceState 'audio_player_task' thread: \n" + str(e))
 
     # ---------------------------------------------------------------------------------------------------------------- #
 

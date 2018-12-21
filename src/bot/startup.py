@@ -12,6 +12,35 @@ from model.music import Music
 from bot import Jakubiweeb
 
 
+def header():
+    config = Config(project="JakubiWeeb", filename="config.json")
+    database = Database(config=config, filename="database.db")
+    return config, database
+
+
+def init_database(config: Config, database: Database):
+    database.create(config.projectpath + "sql" + os.path.sep + "createdb.sql")
+    cursor = database.conn.cursor()
+
+    fileloader = FileLoader(path=config.config.music_folder)
+
+    for anime in fileloader.search_animes():
+        cursor.execute("""
+        INSERT OR REPLACE
+            INTO anime (title, folder) 
+            VALUES (?, ?)""", (anime.name, anime.folder))
+
+        anime_id = cursor.lastrowid
+
+        for music in anime:
+            cursor.execute("""
+            INSERT OR REPLACE
+                INTO music (title, filename, fk_music_anime_id) 
+                VALUES (?, ?, ?)""", (music.title, music.filename, anime_id))
+
+    database.conn.commit()
+
+
 def startup():
     if not discord.opus.is_loaded():
         # the 'opus' library here is opus.dll on windows
@@ -23,30 +52,47 @@ def startup():
 
         discord.opus.load_opus('opus')
 
+    # ================================================================================================================ #
+    # --*--  --*--  --*--  --*--  --*--  --*--  --*--  *   CONFIG   *  --*--  --*--  --*--  --*--  --*--  --*--  --*-- #
     config = Config(project="JakubiWeeb", filename="config.json")
+
+    # ================================================================================================================ #
+    # --*--  --*--  --*--  --*--  --*--  --*--  --*--  *  DATABASE  *  --*--  --*--  --*--  --*--  --*--  --*--  --*-- #
     database = Database(config=config, filename="database.db")
 
-    cursor = database.conn.cursor()
+    # ================================================================================================================ #
+    # --*--  --*--  --*--  --*--  --*--  --*--  --*--  * LOAD  DATA *  --*--  --*--  --*--  --*--  --*--  --*--  --*-- #
+    try:
+        cursor = database.conn.cursor()
 
-    animes = {}
+        animes = {}
 
-    cursor.execute("SELECT * FROM anime")
-    while True:
-        row = cursor.fetchone()
-        if row is None:
-            break
-        print(row)
-        animes[row[0]] = Anime(name=row[1], folder=row[2])
+        cursor.execute("SELECT * FROM anime")
+        while True:
+            row = cursor.fetchone()
+            if row is None:
+                break
+            animes[row[0]] = Anime(name=row[1], folder=row[2])
 
-    cursor.execute("SELECT * FROM music")
-    while True:
-        row = cursor.fetchone()
-        if row is None:
-            break
-        animes[row[3]].append(Music(title=row[1], filename=row[2]))
+        cursor.execute("SELECT * FROM music")
+        while True:
+            row = cursor.fetchone()
+            if row is None:
+                break
+            animes[row[3]].append(Music(title=row[1], filename=row[2]))
 
-    cursor.close()
-    print(''.join([str(animes[a]) + '\n' for a in animes]))
+        cursor.close()
+        print(''.join([str(animes[a]) + '\n' for a in animes]))
+    finally:
+        del database
+
+    return
+
+    # cursor.execute("SELECT * FROM anime WHERE editdist3(anime.title, \"Mdka mga\")")
+    # print(cursor.fetchall())
+
+    # ================================================================================================================ #
+    # --*--  --*--  --*--  --*--  --*--  --*--  --*--  * BOT  START *  --*--  --*--  --*--  --*--  --*--  --*--  --*-- #
 
     bot = commands.Bot(command_prefix=commands.when_mentioned_or(config.config.bot_prefix),
                        description='Bem entendido isso? Resolve o Cascode ai ...')
@@ -58,32 +104,44 @@ def startup():
 
     bot.run(config.config.bot_token)
 
+    # ================================================================================================================ #
+
 
 def startup_init():
+    # ================================================================================================================ #
     config = Config(project="JakubiWeeb", filename="config.json")
     database = Database(config=config, filename="database.db")
     database.create(config.projectpath + "sql" + os.path.sep + "createdb.sql")
-
     cursor = database.conn.cursor()
 
-    fileloader = FileLoader(path=config.config.music_folder)
-    for anime in fileloader.search_animes():
-        cursor.execute("""
-        INSERT 
-            INTO anime (title, folder) 
-            VALUES (?, ?)""", (anime.name, anime.folder))
-        anime_id = cursor.lastrowid
-        for music in anime:
+    try:
+        fileloader = FileLoader(path=config.config.music_folder)
+
+        for anime in fileloader.search_animes():
             cursor.execute("""
-            INSERT 
-                INTO music (title, filename, fk_music_anime_id) 
-                VALUES (?, ?, ?)""", (music.title, music.filename, anime_id))
-            # mp3 = MP3(music.filename)
-            # print(music.title)
-            # print(mp3.get('TIT2'))
-            # print(mp3.get('TPE1'))
-    cursor.execute("SELECT * FROM anime")
-    print(cursor.fetchall())
-    cursor.execute("SELECT * FROM music")
-    print(cursor.fetchall())
-    database.conn.commit()
+            INSERT OR REPLACE
+                INTO anime (title, folder) 
+                VALUES (?, ?)""", (anime.name, anime.folder))
+
+            anime_id = cursor.lastrowid
+
+            for music in anime:
+                cursor.execute("""
+                INSERT OR REPLACE
+                    INTO music (title, filename, fk_music_anime_id) 
+                    VALUES (?, ?, ?)""", (music.title, music.filename, anime_id))
+
+                # mp3 = MP3(music.filename)
+                # print(music.title)
+                # print(mp3.get('TIT2'))
+                # print(mp3.get('TPE1'))
+
+        cursor.execute("SELECT * FROM anime")
+        print(cursor.fetchall())
+
+        cursor.execute("SELECT * FROM music")
+        print(cursor.fetchall())
+
+        database.conn.commit()
+    finally:
+        del database
