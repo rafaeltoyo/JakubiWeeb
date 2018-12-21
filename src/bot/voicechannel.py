@@ -77,11 +77,14 @@ class VoiceState:
     # ---------------------------------------------------------------------------------------------------------------- #
 
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):
+        # Create a request
         entry = Request(message, player)
-        print(str(entry))
+
+        # Playing a songs?
         if not self.songs.empty() or self.is_playing():
-            print("enqueued")
-            await self.bot.send_message(message.channel, '```Enqueued ' + str(entry) + "```")
+            entry.enqueded_msg = await self.bot.send_message(message.channel, '```Enqueued ' + str(entry) + "```")
+
+        # Save the request
         await self.songs.put(entry)
 
     def is_playing(self):
@@ -123,7 +126,9 @@ class VoiceState:
                     icon_url=self.current.message.author.avatar_url
                 )
 
-                self.bot.delete_message(self.current.message)
+                await self.bot.delete_message(self.current.message)
+                if self.current.enqueued_message is not None:
+                    await self.bot.delete_message(self.current.enqueued_message)
                 msg = await self.bot.send_message(self.current.message.channel, embed=embed)  # type: discord.Message
 
                 self.current.player.volume = self.volume
@@ -131,7 +136,7 @@ class VoiceState:
 
                 # WAIT next song flag
                 await self.play_next_song.wait()
-                self.bot.delete_message(msg)
+                await self.bot.delete_message(msg)
             except Exception as e:
                 print("Error in VoiceState 'audio_player_task' thread: \n" + str(e))
 

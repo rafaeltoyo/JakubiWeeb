@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from utils.config import Config
 from utils.db import Database
-from utils.loader.loader import FileLoader
+from utils.loader import FileLoader
 
 from model.anime import Anime
 from model.music import Music

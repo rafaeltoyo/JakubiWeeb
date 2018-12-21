@@ -1,8 +1,10 @@
 import asyncio
 import discord
 from discord.ext import commands
+from mutagen.mp3 import MP3
 
 from .voicechannel import VoiceStateFactory, VoiceState, Request
+from model.music import Music
 
 
 # ==================================================================================================================== #
@@ -27,7 +29,7 @@ class Jakubiweeb:
 
     def __default_msg(self, description: str):
         return discord.Embed(
-            title='Error!',
+            title='Hi!',
             description=description,
             color=discord.Color.dark_blue())
 
@@ -48,17 +50,21 @@ class Jakubiweeb:
     @commands.command(pass_context=True, no_pm=True)
     async def summon(self, ctx: commands.Context):
         """Summons the bot to join your voice channel."""
-        summoned_channel = ctx.message.author.voice_channel  # type: discord.Channel
 
+        # Get Author Channel
+        summoned_channel = ctx.message.author.voice_channel  # type: discord.Channel
         if summoned_channel is None:
             await self.bot.say(embed=self.__error_msg('You are not in a voice channel.'))
             return False
 
+        # Get Bot Channel
         state = self.factory.get_voice_state(ctx.message.server)
 
         if state.voice is None:
+            # Join in channel
             state.voice = await self.bot.join_voice_channel(summoned_channel)
         else:
+            # Move to channel
             await state.voice.move_to(summoned_channel)
 
         return True
@@ -101,6 +107,36 @@ class Jakubiweeb:
 
         try:
             player = await state.voice.create_ytdl_player(song, ytdl_options=opts, after=state.toggle_next)
+        except Exception as e:
+            fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
+            await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
+        else:
+            await state.request_song(ctx.message, player)
+
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def wplay(self, ctx: commands.Context, *, song: str):
+        """Plays a weeb song."""
+        state = self.factory.get_voice_state(ctx.message.server)
+
+        if state.voice is None:
+            success = await ctx.invoke(self.summon)
+            if not success:
+                return
+
+        music = Music("Madoka Magica OP", "")
+
+        mp3 = MP3(music.filename)
+        print(music.title)
+        print(mp3.get('TIT2'))
+        print(mp3.get('TPE1'))
+
+        try:
+            mp3 = MP3(music.filename)
+            player = await state.voice.create_ffmpeg_player(music.filename, after=state.toggle_next)
+            player.title = mp3.get('TIT2') + ' ({})'.format(music.title)
+            player.artist = ' & '.join(mp3.get('TPE1').split('/'))
         except Exception as e:
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
@@ -189,7 +225,5 @@ class Jakubiweeb:
         else:
             skip_count = len(state.skip_votes)
             await self.bot.say('`Now playing {} [skips: {}/3]`'.format(state.current, skip_count))
-
-    # ---------------------------------------------------------------------------------------------------------------- #
 
 # ==================================================================================================================== #
