@@ -1,2 +1,2 @@
-# jukibiweeb
+# JakubiWeeb
 Discord Bot
