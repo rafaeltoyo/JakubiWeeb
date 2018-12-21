@@ -5,10 +5,11 @@ from discord.ext import commands
 from mutagen.mp3 import MP3
 
 from .voicechannel import VoiceStateFactory, VoiceState
-from model.music import Music
 
 from utils.config import Config
 from utils.db import Database
+
+from bot.dbcontroller import DBController
 
 
 # ==================================================================================================================== #
@@ -22,6 +23,9 @@ class Jakubiweeb:
         self.cf = cf
         self.db = db
 
+        self.num_anime = DBController().get_num_animes()
+        self.num_music = DBController().get_num_musics()
+
     def __unload(self):
         self.factory.unload()
 
@@ -29,7 +33,7 @@ class Jakubiweeb:
 
     def __error_msg(self, description: str):
         return discord.Embed(
-            title='Error!',
+            title='Ops!',
             description=description,
             color=discord.Color.red())
 
@@ -82,7 +86,7 @@ class Jakubiweeb:
         """Sets the volume of the currently playing song."""
 
         if 0 > value > 100:
-            await self.bot.say(embed=self.__error_msg('Invalid volume. Only values ​​between 0 and 100'))
+            await self.bot.say(embed=self.__error_msg('Ajuste o ganho entre 0 e 100 % apenas.'))
 
         state = self.factory.get_voice_state(ctx.message.server)
         state.volume = value / 100
@@ -122,6 +126,43 @@ class Jakubiweeb:
     # ---------------------------------------------------------------------------------------------------------------- #
 
     @commands.command(pass_context=True, no_pm=True)
+    async def wautoplay(self, ctx: commands.Context, *, song: str):
+        """Autoplay weeb songs."""
+        state = self.factory.get_voice_state(ctx.message.server)
+
+        if state.voice is None:
+            success = await ctx.invoke(self.summon)
+            if not success:
+                return False
+
+        state.autoplay = True
+
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def wsearch(self, ctx: commands.Context, *, song: str):
+        """Search a weeb song."""
+        items = []
+        try:
+            items = ["[{0[id]} {0[music]} by {0[artists]} ({0[ref]})]\n".format(music) for music in
+                     DBController().search_music(song) if music is not None]
+
+        except Exception as e:
+            items = []
+            print('Erro na consulta (wsearch)!' + str(e))
+
+        finally:
+            if len(items) <= 0:
+                await self.bot.send_message(ctx.message.channel, embed=self.__error_msg("Não tem esse CI na Beta."))
+            else:
+                msg = discord.Embed(title="Resultado", description=''.join(items), color=discord.Color.dark_gold())
+                msg.add_field(name="Animes:", value=str(self.num_anime), inline=True)
+                msg.add_field(name="Musics:", value=str(self.num_music), inline=True)
+                await self.bot.send_message(ctx.message.channel, embed=msg)
+
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True)
     async def wplay(self, ctx: commands.Context, *, song: str):
         """Plays a weeb song. $wplay [search] OR $wplay [song ID]"""
         state = self.factory.get_voice_state(ctx.message.server)
@@ -129,45 +170,24 @@ class Jakubiweeb:
         if state.voice is None:
             success = await ctx.invoke(self.summon)
             if not success:
-                return
+                return False
 
-        music_data = []
-
-        if re.search('^[0-9]+$', song):
-            # SEARCH SONG BY ID
-            cursor = self.db.conn.cursor()
-            cursor.execute("""
-                            SELECT * FROM anime_music 
-                            WHERE folder LIKE (
-                                SELECT filename FROM music WHERE music.id = (?)
-                            )""", (int(song),))
-            music_data = cursor.fetchone()
-            cursor.close()
-        else:
-            # SEARCH SONG BY NAME
-            cursor = self.db.conn.cursor()
-            cursor.execute("""
-                SELECT * FROM anime_music 
-                WHERE anime_music MATCH (?) 
-                ORDER BY rank""", (song,))
-            music_data = cursor.fetchone()
-            cursor.close()
-
-        if music_data is None or len(music_data) <= 0:
-            await self.bot.send_message(ctx.message.channel, embed=self.__error_msg("Não achei sa coisa não, woof!"))
-            return
+        player = None
 
         try:
-            mp3 = MP3(music_data[4])
-            player = state.voice.create_ffmpeg_player(music_data[4], after=state.toggle_next)
-            player.title = music_data[2] + ' ({})'.format(music_data[1])
-            player.artist = ' & '.join(music_data[3].split('/'))
-            player.duration = mp3.info.length if mp3 else 0
+            player = DBController().create_mp3_player(state, song)
+
         except Exception as e:
-            fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
-            await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
-        else:
-            await state.request_song(ctx.message, player)
+            player = None
+            print('Erro no wplay! ' + str(e))
+
+        finally:
+            if player is None:
+                await self.bot.send_message(ctx.message.channel, embed=self.__error_msg("Não tem esse CI na Beta."))
+            else:
+                await state.request_song(ctx.message, player)
+
+        return
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -206,7 +226,7 @@ class Jakubiweeb:
         try:
             state.audio_player.cancel()
             del self.factory.voice_states[server.id]
-            await self.bot.say('Adeus :(')
+            await self.bot.say('Megôooooons!')
             await state.voice.disconnect()
         except:
             pass

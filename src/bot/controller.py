@@ -10,6 +10,7 @@ from utils.loader import FileLoader
 from model.anime import Anime
 from model.music import Music
 
+from bot.dbcontroller import DBController
 from bot import Jakubiweeb
 
 
@@ -19,6 +20,7 @@ class Controller(object):
 
         self.cf = Config(project="JakubiWeeb", filename="config.json")
         self.db = Database(config=self.cf, filename="database.db")
+        DBController().set_db(self.db)
 
     def __del__(self):
 
@@ -98,21 +100,6 @@ class Controller(object):
                         VALUES (?, ?, ?, ?, ?)""",
                                (str(anime.name), str(music.title), str(mp3.get('TIT2')), str(mp3.get('TPE1')),
                                 str(music.filename)))
-
-        # cursor.execute("""
-        #    SELECT
-        #        *
-        #    FROM anime
-        #    INNER JOIN music
-        #        ON anime.id = music.fk_music_anime_id
-        #    """)
-
-        # for row in cursor.fetchall():
-        #    print(row)
-        #    cursor.execute("""
-        #        INSERT INTO anime_music(anime_name, music_title, folder)
-        #        VALUES (?, ?, ?)
-        #        """, (row[1], row[4], row[5]))
 
         self.db.conn.commit()
 

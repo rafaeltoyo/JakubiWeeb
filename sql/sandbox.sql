@@ -46,3 +46,11 @@ WHERE folder LIKE (
     SELECT music.filename as ref FROM music WHERE music.id = 53
 )
 ORDER BY rank;
+
+SELECT anime_music.*, music.id
+    FROM anime_music
+INNER JOIN music
+    ON anime_music.folder LIKE music.filename
+WHERE anime_music MATCH "madoka"
+ORDER BY rank
+LIMIT 20;

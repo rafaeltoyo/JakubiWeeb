@@ -3,7 +3,10 @@ import discord
 from discord.ext import commands
 from typing import Union, Any
 
-from .request import YTRequest, MP3Request
+from .request import Request, YTRequest, MP3Request
+
+from utils.config import Config
+from utils.db import Database
 
 # ==================================================================================================================== #
 
@@ -56,7 +59,7 @@ class VoiceState:
 
     def __init__(self, bot: commands.Bot):
 
-        self.current = None     # type: Union[YTRequest, MP3Request]
+        self.current = None     # type: Request
         self.voice = None       # type: discord.VoiceClient
         self.autoplay = None    # type: Request
         self.volume = 0.3       # type: float
@@ -118,20 +121,30 @@ class VoiceState:
                 self.play_next_song.clear()
 
                 # Get next song or wait
-                self.current = await self.songs.get()  # type: Union[YTRequest, MP3Request]
+                if self.songs.empty() and self.autoplay:
+                    # If empty song queue and autoplay is on then put a random song in queue
+                    await self.songs.put()
+                self.current = await self.songs.get()  # type: Request
 
-                embed = self.current.message_playing()
-
-                await self.bot.delete_message(self.current.message)
+                # check if exists and delete "enqueued" message
                 if self.current.enqueued_message is not None:
                     await self.bot.delete_message(self.current.enqueued_message)
+
+                # build "playing" message
+                embed = self.current.message_playing()
                 msg = await self.bot.send_message(self.current.message.channel, embed=embed)  # type: discord.Message
 
+                # delete request message
+                await self.bot.delete_message(self.current.message)
+
+                # set user volume
                 self.current.player.volume = self.volume
+                # start music
                 self.current.player.start()
 
-                # WAIT next song flag
+                # WAIT next song flag (skip or end)
                 await self.play_next_song.wait()
+                # delete "playing" message
                 await self.bot.delete_message(msg)
             except Exception as e:
                 print("Error in VoiceState 'audio_player_task' thread: \n" + str(e))

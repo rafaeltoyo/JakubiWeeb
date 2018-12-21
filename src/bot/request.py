@@ -22,11 +22,11 @@ class Request(abc.ABC):
     def _title(self) -> str:
         raise Exception
 
-    def __message_base(self, title):
+    def __message_base(self, title, color):
         m = discord.Embed(
             title=title,
             description=self._title(),
-            color=discord.Color.dark_green()
+            color=color
         )
         if self.message:
             m.set_author(
@@ -39,7 +39,11 @@ class Request(abc.ABC):
         return m
 
     def message_playing(self):
-        m = self.__message_base("Now playing")
+        m = self.__message_base("Now playing", discord.Color.dark_green())
+        return m
+
+    def message_enqueued(self):
+        m = self.__message_base("Enqueued", discord.Color.dark_blue())
         return m
 
     def message_now_playing(self):
@@ -55,12 +59,6 @@ class YTRequest(Request):
     def _title(self) -> str:
         return '*{0.title}* uploaded by {0.uploader}'.format(self.player)
 
-    def message_playing(self):
-        return super().message_playing()
-
-    def message_now_playing(self):
-        return super().message_now_playing()
-
 
 class MP3Request(Request):
 
@@ -69,9 +67,3 @@ class MP3Request(Request):
 
     def _title(self) -> str:
         return '*{0.title}* by {0.artist}'.format(self.player)
-
-    def message_playing(self):
-        return super().message_playing()
-
-    def message_now_playing(self):
-        return super().message_now_playing()
