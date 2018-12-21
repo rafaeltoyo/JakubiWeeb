@@ -85,7 +85,7 @@ class VoiceState:
 
         if self.autoplay is None:
             self.autoplay = message
-            if self.songs.empty():
+            if self.songs.empty() and not self.is_playing():
                 await self.request_random_song()
             return True
         else:
