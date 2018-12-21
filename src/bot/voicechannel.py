@@ -1,12 +1,12 @@
 import asyncio
 import discord
+import random as rnd
 from discord.ext import commands
-from typing import Union, Any
 
 from .request import Request, YTRequest, MP3Request
 
-from utils.config import Config
-from utils.db import Database
+from bot.dbcontroller import DBController
+
 
 # ==================================================================================================================== #
 
@@ -52,6 +52,7 @@ class VoiceStateFactory:
             except:
                 pass
 
+
 # ==================================================================================================================== #
 
 
@@ -59,10 +60,10 @@ class VoiceState:
 
     def __init__(self, bot: commands.Bot):
 
-        self.current = None     # type: Request
-        self.voice = None       # type: discord.VoiceClient
-        self.autoplay = None    # type: Request
-        self.volume = 0.3       # type: float
+        self.current = None  # type: Request
+        self.voice = None  # type: discord.VoiceClient
+        self.autoplay = None  # type: discord.Message
+        self.volume = 0.3  # type: float
 
         # instance of the bot
         self.bot = bot
@@ -80,7 +81,27 @@ class VoiceState:
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
+    async def toggle_autoplay(self, message: discord.Message):
+
+        if self.autoplay is None:
+            self.autoplay = message
+            if self.songs.empty():
+                await self.request_random_song()
+            return True
+        else:
+            self.autoplay = None
+            return False
+
+    async def request_random_song(self):
+
+        if self.autoplay is None:
+            return
+        music_id = rnd.randint(1, DBController().num_musics)
+        player = DBController().create_mp3_player(self, str(music_id))
+        await self.request_song(self.autoplay, player)
+
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):
+
         # Create a request
         if hasattr(player, 'yt'):
             entry = YTRequest(message, player)
@@ -89,7 +110,7 @@ class VoiceState:
 
         # Playing a songs?
         if not self.songs.empty() or self.is_playing():
-            entry.enqueded_msg = await self.bot.send_message(message.channel, '```Enqueued ' + str(entry) + "```")
+            entry.enqueded_msg = await self.bot.send_message(message.channel, embed=entry.message_enqueued())
 
         # Save the request
         await self.songs.put(entry)
@@ -121,9 +142,9 @@ class VoiceState:
                 self.play_next_song.clear()
 
                 # Get next song or wait
-                if self.songs.empty() and self.autoplay:
+                if self.songs.empty() and self.autoplay is not None:
                     # If empty song queue and autoplay is on then put a random song in queue
-                    await self.songs.put()
+                    await self.request_random_song()
                 self.current = await self.songs.get()  # type: Request
 
                 # check if exists and delete "enqueued" message
@@ -135,7 +156,7 @@ class VoiceState:
                 msg = await self.bot.send_message(self.current.message.channel, embed=embed)  # type: discord.Message
 
                 # delete request message
-                await self.bot.delete_message(self.current.message)
+                # await self.bot.delete_message(self.current.message)
 
                 # set user volume
                 self.current.player.volume = self.volume
@@ -148,6 +169,7 @@ class VoiceState:
                 await self.bot.delete_message(msg)
             except Exception as e:
                 print("Error in VoiceState 'audio_player_task' thread: \n" + str(e))
+                self.autoplay = None
 
     # ---------------------------------------------------------------------------------------------------------------- #
 

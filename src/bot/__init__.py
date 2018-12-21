@@ -23,9 +23,6 @@ class Jakubiweeb:
         self.cf = cf
         self.db = db
 
-        self.num_anime = DBController().get_num_animes()
-        self.num_music = DBController().get_num_musics()
-
     def __unload(self):
         self.factory.unload()
 
@@ -53,7 +50,7 @@ class Jakubiweeb:
             if emoji.name == "Butterpride":
                 break
         await self.bot.add_reaction(ctx.message, emoji)
-        await self.bot.say(embed=self.__default_msg("Thiago Bispo dá o cu!", "Bem entendido isso? :Butterpride:"))
+        await self.bot.say(embed=self.__default_msg("Thiago Bispo dá o cu!", "Bem entendido isso? {}".format(emoji)))
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -126,7 +123,7 @@ class Jakubiweeb:
     # ---------------------------------------------------------------------------------------------------------------- #
 
     @commands.command(pass_context=True, no_pm=True)
-    async def wautoplay(self, ctx: commands.Context, *, song: str):
+    async def wautoplay(self, ctx: commands.Context):
         """Autoplay weeb songs."""
         state = self.factory.get_voice_state(ctx.message.server)
 
@@ -135,7 +132,13 @@ class Jakubiweeb:
             if not success:
                 return False
 
-        state.autoplay = True
+        turnon = await state.toggle_autoplay(ctx.message)
+        if turnon:
+            await self.bot.send_message(ctx.message.channel,
+                                        embed=self.__default_msg("Autoplay ON", "Hora da festinha dos weebs!"))
+        else:
+            await self.bot.send_message(ctx.message.channel,
+                                        embed=self.__default_msg("Autoplay OFF", "Sem graça..."))
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -156,8 +159,8 @@ class Jakubiweeb:
                 await self.bot.send_message(ctx.message.channel, embed=self.__error_msg("Não tem esse CI na Beta."))
             else:
                 msg = discord.Embed(title="Resultado", description=''.join(items), color=discord.Color.dark_gold())
-                msg.add_field(name="Animes:", value=str(self.num_anime), inline=True)
-                msg.add_field(name="Musics:", value=str(self.num_music), inline=True)
+                msg.add_field(name="Animes:", value=str(DBController().num_animes), inline=True)
+                msg.add_field(name="Musics:", value=str(DBController().num_musics), inline=True)
                 await self.bot.send_message(ctx.message.channel, embed=msg)
 
     # ---------------------------------------------------------------------------------------------------------------- #

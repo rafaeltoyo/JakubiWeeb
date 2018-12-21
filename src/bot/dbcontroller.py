@@ -9,23 +9,17 @@ class DBController(metaclass=Singleton):
 
     def __init__(self):
         self.db = None  # type: Database
+        self.num_animes = 0
+        self.num_musics = 0
 
     def set_db(self, db: Database):
         self.db = db
-
-    def get_num_animes(self):
         cursor = self.db.conn.cursor()
         cursor.execute("SELECT count(*) FROM anime")
-        r = int(cursor.fetchone()[0])
-        cursor.close()
-        return r
-
-    def get_num_musics(self):
-        cursor = self.db.conn.cursor()
+        self.num_animes = int(cursor.fetchone()[0])
         cursor.execute("SELECT count(*) FROM music")
-        r = int(cursor.fetchone()[0])
+        self.num_musics = int(cursor.fetchone()[0])
         cursor.close()
-        return r
 
     def search_music(self, search: str):
         cursor = self.db.conn.cursor()
@@ -76,7 +70,7 @@ class DBController(metaclass=Singleton):
                         ON anime_music.folder LIKE music.filename
                     WHERE anime_music MATCH (?)
                     ORDER BY rank
-                    LIMIT 20""", (search,))
+                    LIMIT 1""", (search,))
 
             # Get result
             music_data = cursor.fetchone()
