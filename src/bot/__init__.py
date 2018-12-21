@@ -1,10 +1,14 @@
+import re
 import asyncio
 import discord
 from discord.ext import commands
 from mutagen.mp3 import MP3
 
-from .voicechannel import VoiceStateFactory, VoiceState, Request
+from .voicechannel import VoiceStateFactory, VoiceState
 from model.music import Music
+
+from utils.config import Config
+from utils.db import Database
 
 
 # ==================================================================================================================== #
@@ -12,9 +16,11 @@ from model.music import Music
 
 class Jakubiweeb:
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot, cf: Config, db: Database):
         self.bot = bot
         self.factory = VoiceStateFactory(bot)
+        self.cf = cf
+        self.db = db
 
     def __unload(self):
         self.factory.unload()
@@ -27,9 +33,9 @@ class Jakubiweeb:
             description=description,
             color=discord.Color.red())
 
-    def __default_msg(self, description: str):
+    def __default_msg(self, title: str, description: str):
         return discord.Embed(
-            title='Hi!',
+            title=title,
             description=description,
             color=discord.Color.dark_blue())
 
@@ -43,7 +49,7 @@ class Jakubiweeb:
             if emoji.name == "Butterpride":
                 break
         await self.bot.add_reaction(ctx.message, emoji)
-        await self.bot.say(embed=self.__default_msg("Thiago Bispo dá o cu! :Butterpride:"))
+        await self.bot.say(embed=self.__default_msg("Thiago Bispo dá o cu!", "Bem entendido isso? :Butterpride:"))
 
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -117,7 +123,7 @@ class Jakubiweeb:
 
     @commands.command(pass_context=True, no_pm=True)
     async def wplay(self, ctx: commands.Context, *, song: str):
-        """Plays a weeb song."""
+        """Plays a weeb song. $wplay [search] OR $wplay [song ID]"""
         state = self.factory.get_voice_state(ctx.message.server)
 
         if state.voice is None:
@@ -125,18 +131,38 @@ class Jakubiweeb:
             if not success:
                 return
 
-        music = Music("Madoka Magica OP", "")
+        music_data = []
 
-        mp3 = MP3(music.filename)
-        print(music.title)
-        print(mp3.get('TIT2'))
-        print(mp3.get('TPE1'))
+        if re.search('^[0-9]+$', song):
+            # SEARCH SONG BY ID
+            cursor = self.db.conn.cursor()
+            cursor.execute("""
+                            SELECT * FROM anime_music 
+                            WHERE folder LIKE (
+                                SELECT filename FROM music WHERE music.id = (?)
+                            )""", (int(song),))
+            music_data = cursor.fetchone()
+            cursor.close()
+        else:
+            # SEARCH SONG BY NAME
+            cursor = self.db.conn.cursor()
+            cursor.execute("""
+                SELECT * FROM anime_music 
+                WHERE anime_music MATCH (?) 
+                ORDER BY rank""", (song,))
+            music_data = cursor.fetchone()
+            cursor.close()
+
+        if music_data is None or len(music_data) <= 0:
+            await self.bot.send_message(ctx.message.channel, embed=self.__error_msg("Não achei sa coisa não, woof!"))
+            return
 
         try:
-            mp3 = MP3(music.filename)
-            player = await state.voice.create_ffmpeg_player(music.filename, after=state.toggle_next)
-            player.title = mp3.get('TIT2') + ' ({})'.format(music.title)
-            player.artist = ' & '.join(mp3.get('TPE1').split('/'))
+            mp3 = MP3(music_data[4])
+            player = state.voice.create_ffmpeg_player(music_data[4], after=state.toggle_next)
+            player.title = music_data[2] + ' ({})'.format(music_data[1])
+            player.artist = ' & '.join(music_data[3].split('/'))
+            player.duration = mp3.info.length if mp3 else 0
         except Exception as e:
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
@@ -224,6 +250,8 @@ class Jakubiweeb:
             await self.bot.say('`Not playing anything.`')
         else:
             skip_count = len(state.skip_votes)
-            await self.bot.say('`Now playing {} [skips: {}/3]`'.format(state.current, skip_count))
+            embed = state.current.message_now_playing()
+            embed.add_field(name="Skips:", value='[skips: {}/3]'.format(skip_count))
+            await self.bot.say(embed=embed)
 
 # ==================================================================================================================== #

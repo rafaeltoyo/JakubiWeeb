@@ -27,29 +27,22 @@ DROP TABLE music;
 DROP TABLE anime;
 
 commit;
+rollback;
 
 CREATE VIRTUAL TABLE anime_music
-USING FTS5(anime_name, music_title, folder);
+USING FTS5(anime, ref, music, artirts, folder);
 
 DROP TABLE anime_music;
-
-INSERT INTO anime_music(anime_name,music_title)
-VALUES
-    ('Madoka Magica', 'Connect', 'Claris'),
-    ('Madoka Magica', 'Magia', 'Kalafina');
 
 SELECT * FROM anime_music;
 
 SELECT *
 FROM anime_music
-WHERE anime_music MATCH 'madoka'
+WHERE anime_music MATCH 'claris connect'
 ORDER BY rank;
 
-SELECT *
-FROM anime_music
-WHERE anime_music MATCH 'connect'
+SELECT * FROM anime_music
+WHERE folder LIKE (
+    SELECT music.filename as ref FROM music WHERE music.id = 53
+)
 ORDER BY rank;
-
-rollback;
-
-

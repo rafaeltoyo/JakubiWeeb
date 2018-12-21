@@ -1,6 +1,7 @@
 import os
 import discord
 from discord.ext import commands
+from mutagen.mp3 import MP3
 
 from utils.config import Config
 from utils.db import Database
@@ -47,7 +48,7 @@ class Controller(object):
 
         self.db.conn.commit()
 
-    def print_database(self):
+    def load_database(self):
 
         cursor = self.db.conn.cursor()
 
@@ -71,27 +72,47 @@ class Controller(object):
         print(''.join([str(animes[a]) + '\n' for a in animes]))
         return animes
 
-    def create_search_engine(self):
+    def create_monolith(self):
+
+        animes = self.load_database()
+
         cursor = self.db.conn.cursor()
 
         cursor.execute("""
-            CREATE VIRTUAL TABLE IF NOT EXISTS anime_music
-            USING FTS5(anime_name, music_title, folder)
-            """)
-        cursor.execute("""
-            SELECT
-                *
-            FROM anime
-            INNER JOIN music
-                ON anime.id = music.fk_music_anime_id
+            CREATE VIRTUAL TABLE IF NOT EXISTS 
+                anime_music
+            USING FTS5(anime, ref, music, artirts, folder)
             """)
 
-        for row in cursor.fetchall():
-            print(row)
-            cursor.execute("""
-                INSERT INTO anime_music(anime_name, music_title, folder)
-                VALUES (?, ?, ?)
-                """, (row[1], row[4], row[5]))
+        for kanime in animes:
+            anime = animes[kanime]
+
+            for music in anime:
+
+                mp3 = MP3(music.filename)
+                if mp3 is None:
+                    continue
+
+                cursor.execute("""
+                    INSERT INTO anime_music (anime, ref, music, artirts, folder)
+                        VALUES (?, ?, ?, ?, ?)""",
+                               (str(anime.name), str(music.title), str(mp3.get('TIT2')), str(mp3.get('TPE1')),
+                                str(music.filename)))
+
+        # cursor.execute("""
+        #    SELECT
+        #        *
+        #    FROM anime
+        #    INNER JOIN music
+        #        ON anime.id = music.fk_music_anime_id
+        #    """)
+
+        # for row in cursor.fetchall():
+        #    print(row)
+        #    cursor.execute("""
+        #        INSERT INTO anime_music(anime_name, music_title, folder)
+        #        VALUES (?, ?, ?)
+        #        """, (row[1], row[4], row[5]))
 
         self.db.conn.commit()
 
@@ -109,7 +130,7 @@ class Controller(object):
 
         bot = commands.Bot(command_prefix=commands.when_mentioned_or(self.cf.config.bot_prefix),
                            description='Bem entendido isso? Resolve o Cascode ai ...')
-        bot.add_cog(Jakubiweeb(bot))
+        bot.add_cog(Jakubiweeb(bot, self.cf, self.db))
 
         @bot.event
         async def on_ready():

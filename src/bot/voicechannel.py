@@ -1,8 +1,9 @@
 import asyncio
 import discord
 from discord.ext import commands
+from typing import Union, Any
 
-from .request import Request
+from .request import YTRequest, MP3Request
 
 # ==================================================================================================================== #
 
@@ -55,7 +56,7 @@ class VoiceState:
 
     def __init__(self, bot: commands.Bot):
 
-        self.current = None     # type: Request
+        self.current = None     # type: Union[YTRequest, MP3Request]
         self.voice = None       # type: discord.VoiceClient
         self.autoplay = None    # type: Request
         self.volume = 0.3       # type: float
@@ -78,7 +79,10 @@ class VoiceState:
 
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):
         # Create a request
-        entry = Request(message, player)
+        if hasattr(player, 'yt'):
+            entry = YTRequest(message, player)
+        else:
+            entry = MP3Request(message, player)
 
         # Playing a songs?
         if not self.songs.empty() or self.is_playing():
@@ -114,17 +118,9 @@ class VoiceState:
                 self.play_next_song.clear()
 
                 # Get next song or wait
-                self.current = await self.songs.get()  # type: Request
+                self.current = await self.songs.get()  # type: Union[YTRequest, MP3Request]
 
-                embed = discord.Embed(
-                    title='Now playing:',
-                    description=str(self.current) + "[%s]" % self.current.message.author.mention,
-                    color=discord.Color.dark_blue()
-                )
-                embed.set_author(
-                    name=self.current.message.author.nick,
-                    icon_url=self.current.message.author.avatar_url
-                )
+                embed = self.current.message_playing()
 
                 await self.bot.delete_message(self.current.message)
                 if self.current.enqueued_message is not None:
