@@ -10,7 +10,6 @@ from utils.loader import FileLoader
 from model.anime import Anime
 from model.music import Music
 
-from bot.dbcontroller import DBController
 from bot import Jakubiweeb
 
 
@@ -20,16 +19,18 @@ class Controller(object):
 
         self.cf = Config(project="JakubiWeeb", filename="config.json")
         self.db = Database(config=self.cf, filename="database.db")
-        DBController().set_db(self.db)
 
     def __del__(self):
 
         del self.cf
         del self.db
 
+    def delete_database(self):
+        self.db.exec(self.cf.projectpath + "sql" + os.path.sep + "deletedb.sql")
+
     def create_database(self):
 
-        self.db.create(self.cf.projectpath + "sql" + os.path.sep + "createdb.sql")
+        self.db.exec(self.cf.projectpath + "sql" + os.path.sep + "createdb.sql")
         cursor = self.db.conn.cursor()
 
         fileloader = FileLoader(path=self.cf.config.music_folder)
