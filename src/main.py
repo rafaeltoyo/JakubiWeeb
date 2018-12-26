@@ -8,7 +8,6 @@ def main():
     create = False
     delete = False
 
-    # print command line arguments
     for arg in sys.argv[1:]:
         if arg == "reset":
             create = True
@@ -20,14 +19,21 @@ def main():
         else:
             raise Exception("Invalid flag!")
 
+    # Main controller
     c = Controller()
     try:
+        # Delete database.
         if delete:
             c.delete_database()
+
+        # Create database using config file.
         if create:
             c.create_database()
             c.create_monolith()
+
         DBController().set_db(c.db)
+
+        print('=' * 80)
         c.run()
     except Exception as e:
         print(e)

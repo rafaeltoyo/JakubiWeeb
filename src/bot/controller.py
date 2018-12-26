@@ -16,26 +16,45 @@ from bot import Jakubiweeb
 class Controller(object):
 
     def __init__(self):
+        """
+        Main controller.
+        """
+        try:
+            # Load/Create the configuration file.
+            self.cf = Config(project="JakubiWeeb", filename="config.json")
+        except Exception as e:
+            print("Unable to start the program: " + str(e))
+            exit(-1)
 
-        self.cf = Config(project="JakubiWeeb", filename="config.json")
+        # Start database connection.
         self.db = Database(config=self.cf, filename="database.db")
 
     def __del__(self):
-
+        """
+        Delete the configuration and database controller
+        """
         del self.cf
         del self.db
 
     def delete_database(self):
+        """
+        Delete database with 'deletedb.sql' file.
+        :return:
+        """
         self.db.exec(self.cf.projectpath + "sql" + os.path.sep + "deletedb.sql")
 
     def create_database(self):
-
+        """
+        Create database with 'createdb.sql' file.
+        :return:
+        """
         self.db.exec(self.cf.projectpath + "sql" + os.path.sep + "createdb.sql")
         cursor = self.db.conn.cursor()
 
-        fileloader = FileLoader(path=self.cf.config.music_folder)
+        # Load music folder
+        loader = FileLoader(path=self.cf.config.music_folder)
 
-        for anime in fileloader.search_animes():
+        for anime in loader.search_animes():
             cursor.execute("""
                 INSERT OR REPLACE
                     INTO anime (title, folder) 
