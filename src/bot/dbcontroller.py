@@ -1,5 +1,7 @@
 import re
 from mutagen.mp3 import MP3
+from mutagen.mp4 import MP4
+from mutagen.flac import FLAC
 
 from utils.singleton import Singleton
 from utils.db import Database
@@ -12,6 +14,9 @@ class DBController(metaclass=Singleton):
         self.num_animes = 0
         self.num_musics = 0
 
+    def __sanitize(self, s):
+        return s.replace('-', ' ').replace('!', '').replace('?', '')
+
     def set_db(self, db: Database):
         self.db = db
         cursor = self.db.conn.cursor()
@@ -22,6 +27,7 @@ class DBController(metaclass=Singleton):
         cursor.close()
 
     def search_music(self, search: str):
+        search = self.__sanitize(search)
         cursor = self.db.conn.cursor()
         try:
             cursor.execute("""
@@ -29,7 +35,7 @@ class DBController(metaclass=Singleton):
                             FROM anime_music
                         INNER JOIN music
                             ON anime_music.folder LIKE music.filename
-                        WHERE anime_music MATCH (?)
+                        WHERE anime_music MATCH ?
                         ORDER BY music.id
                         LIMIT 20""", (search,))
             while True:
@@ -49,6 +55,7 @@ class DBController(metaclass=Singleton):
             cursor.close()
 
     def create_mp3_player(self, state, search, **kwargs):
+        search = self.__sanitize(search)
         cursor = self.db.conn.cursor()
         try:
 

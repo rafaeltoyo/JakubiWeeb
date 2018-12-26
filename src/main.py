@@ -2,6 +2,7 @@ import sys
 from bot.controller import Controller
 from bot.dbcontroller import DBController
 
+
 def main():
 
     create = False

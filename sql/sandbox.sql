@@ -30,7 +30,7 @@ commit;
 rollback;
 
 CREATE VIRTUAL TABLE anime_music
-USING FTS5(anime, ref, music, artirts, folder);
+USING FTS5(anime, ref, music, artirts, folder, tokenize = "porter ascii");
 
 DROP TABLE anime_music;
 
@@ -38,7 +38,7 @@ SELECT * FROM anime_music;
 
 SELECT *
 FROM anime_music
-WHERE anime_music MATCH 'claris connect'
+WHERE anime_music = "\"k on!\""
 ORDER BY rank;
 
 SELECT * FROM anime_music

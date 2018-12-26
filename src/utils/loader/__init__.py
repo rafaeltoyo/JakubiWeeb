@@ -47,6 +47,20 @@ class FileLoader(object):
         """
         return (p for p in self.__explore(path=self.path, ext=".mp3", deep=True))
 
+    def search_m4a(self):
+        """
+        Example: M4A search
+        :return:
+        """
+        return (p for p in self.__explore(path=self.path, ext="m4a", deep=True))
+
+    def search_flac(self):
+        """
+        Example: FLAC search
+        :return:
+        """
+        return (p for p in self.__explore(path=self.path, ext=".flac", deep=True))
+
     def search_animes(self):
         """
         Anime search
