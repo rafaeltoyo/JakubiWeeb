@@ -97,7 +97,7 @@ class VoiceState:
         if self.autoplay is None:
             return
         music_id = rnd.randint(1, DBController().num_musics)
-        player = DBController().create_mp3_player(self, str(music_id))
+        player = DBController().create_music_player(self, str(music_id))
         await self.request_song(self.autoplay, player)
 
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):

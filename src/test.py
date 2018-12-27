@@ -8,17 +8,13 @@ from utils.loader import FileLoader
 from utils.log import Log
 
 
-music = FLAC("../01 Kimi No Tonari.flac")
-print(music['title'])
-print(music['artists'])
-
-music = MP4("../Karakai Jouzu no Takagi-san END 1.m4a")
-print(music['©ART'])
-print(music['©nam'])
-
-print(os.path.splitext("../Karakai Jouzu no Takagi-san END 1.m4a"))
-
-exit(0)
+# music = FLAC("../01 Kimi No Tonari.flac")
+# print(music['title'])
+# print(music['artists'])
+# music = MP4("../Karakai Jouzu no Takagi-san END 1.m4a")
+# print(music['©ART'])
+# print(music['©nam'])
+# print(os.path.splitext("../Karakai Jouzu no Takagi-san END 1.m4a"))
 
 cf = Config()
 
