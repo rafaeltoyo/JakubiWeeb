@@ -9,9 +9,13 @@ class Log(metaclass=Singleton):
 
     def __init__(self):
         self.__config = None
+        self.__debug = False
 
     def set_config(self, config: Config):
         self.__config = config
+
+    def set_debug(self):
+        self.__debug = True
 
     def __generate_name(self, type=""):
         return self.__config.projectpath + "log" + os.path.sep + datetime.date.today().strftime(
@@ -27,8 +31,11 @@ class Log(metaclass=Singleton):
             file.write("Log created at " + datetime.datetime.now().__str__() + '\n')
 
     def __write(self, txt: str, type="", lnbreak=True):
-        self.__check()
+        if self.__debug:
+            print(txt)
+            return
 
+        self.__check()
         filename = self.__generate_name(type=type)
 
         if not os.path.isfile(filename):
@@ -40,5 +47,5 @@ class Log(metaclass=Singleton):
     def err(self, txt: str):
         self.__write(txt, type="error", lnbreak=True)
 
-    def write(self, txt: str, breakln=True):
+    def write(self, txt: str):
         self.__write(txt, type="info", lnbreak=True)

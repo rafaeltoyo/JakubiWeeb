@@ -1,5 +1,6 @@
 import sqlite3
 from ..config import Config
+from utils.log import Log
 
 
 class Database(object):
@@ -17,7 +18,7 @@ class Database(object):
         try:
             self.conn = sqlite3.connect(self.__filename)  # type: sqlite3.Connection
         except Exception as e:
-            print("Error in database connection: " + str(e))
+            Log().err("Error in database connection: " + str(e))
             self.conn = None
 
     def __del__(self):

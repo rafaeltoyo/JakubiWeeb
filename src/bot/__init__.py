@@ -178,7 +178,7 @@ class Jakubiweeb:
         player = None
 
         try:
-            player = DBController().create_mp3_player(state, song)
+            player = DBController().create_music_player(state, song)
 
         except Exception as e:
             player = None

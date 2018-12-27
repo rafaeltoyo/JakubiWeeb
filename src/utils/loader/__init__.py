@@ -97,8 +97,8 @@ class FileLoader(object):
                 # Fix anime name
                 anime.name = match.group(2)
 
-            # Search mp3 files into anime folder.
-            for (music, folder) in self.__explore(path=anime.folder, ext=".mp3", deep=True):
+            # Search music files into anime folder.
+            for (music, folder) in self.__explore(path=anime.folder, ext=".mp3|.m4a|.mp4|.flac", deep=True):
                 anime.append(Music(music, folder))
 
             yield anime  # Return the anime

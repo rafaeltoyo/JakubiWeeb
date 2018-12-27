@@ -1,3 +1,4 @@
+import os
 import re
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
@@ -54,7 +55,7 @@ class DBController(metaclass=Singleton):
         finally:
             cursor.close()
 
-    def create_mp3_player(self, state, search, **kwargs):
+    def create_music_player(self, state, search, **kwargs):
         search = self.__sanitize(search)
         cursor = self.db.conn.cursor()
         try:
@@ -84,11 +85,20 @@ class DBController(metaclass=Singleton):
             cursor.close()
             cursor = None
 
-            mp3 = MP3(music_data[4])
+            duration = 0.0
+            basename, extension = os.path.splitext(music_data[4])
+            extension = extension.replace('.', '')
+            if extension == 'mp3':
+                duration = MP3(music_data[4]).info.length
+            elif extension == 'm4a' or extension == 'mp4':
+                duration = MP4(music_data[4]).info.length
+            elif extension == 'flac':
+                duration = FLAC(music_data[4]).info.length
+
             player = state.voice.create_ffmpeg_player(music_data[4], after=state.toggle_next)
             player.title = "[{0[5]}] {0[2]} ({0[1]})".format(music_data)
             player.artist = ' & '.join(music_data[3].split('/'))
-            player.duration = mp3.info.length if mp3 else 0
+            player.duration = duration
 
             return player
 
