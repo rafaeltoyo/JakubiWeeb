@@ -1,6 +1,16 @@
 from utils.filesystem import *
 
-print(PathBuilder().project)
+t1 = Teste1()
 
-for i in Explorer("D:\\Rafael\\Music\\Others\\Anime Musics\\Opening + Ending"):
-    print(i)
+print(Teste1().value)
+print(t1.value)
+
+t1.value += 1
+
+print(Teste1().value)
+print(t1.value)
+
+Teste1().value += 1
+
+print(Teste1().value)
+print(t1.value)
