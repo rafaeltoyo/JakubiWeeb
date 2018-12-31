@@ -1,6 +1,6 @@
 import sys
-from bot.controller import Controller
-from bot.dbcontroller import DBController
+from bot_legacy.controller import Controller
+from bot_legacy.dbcontroller import DBController
 from utils.log import Log
 
 

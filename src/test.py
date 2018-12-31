@@ -1,4 +1,19 @@
-from utils.filesystem import *
+from localmusic.core import LocalMusicController
+from utils.singleton import Singleton2
+
+LocalMusicController().load("")
+
+
+class Teste1(metaclass=Singleton2):
+    def __init__(self):
+        self.value = 1
+        Teste2()
+
+
+class Teste2(metaclass=Singleton2):
+    def __init__(self):
+        self.value = 2
+
 
 t1 = Teste1()
 

@@ -15,7 +15,7 @@ from utils.log import Log
 from model.anime import Anime
 from model.music import Music
 
-from bot import Jakubiweeb
+from bot_legacy import Jakubiweeb
 
 
 class Controller(object):

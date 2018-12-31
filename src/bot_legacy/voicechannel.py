@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from .request import Request, YTRequest, MP3Request
 
-from bot.dbcontroller import DBController
+from bot_legacy.dbcontroller import DBController
 
 
 # ==================================================================================================================== #
