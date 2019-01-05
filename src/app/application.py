@@ -1,7 +1,7 @@
-from localmusic import *
+from .discordbot import JakubiweebApplication
 
-from .config import *
-from .bot import *
+from .config import Config
+from .localmusic import LocalMusicController
 
 
 class Application:
@@ -17,13 +17,13 @@ class Application:
         self.config = Config()
 
         # Local music controller
-        self.music = LocalMusicController()
+        self.musics = LocalMusicController()
 
         self.__start(*args)
 
     def __del__(self):
         del self.config
-        del self.music
+        del self.musics
 
     # ================================================================================================================ #
     #   Start
@@ -36,9 +36,7 @@ class Application:
             self.config.load()
 
             # Load database tables
-            self.music.init_db()
-
-            # self.music.load(path=self.config.params.music_folder)
+            self.musics.init_db()
 
         except Exception as e:
             print("Unable to start the bot!")
@@ -49,6 +47,11 @@ class Application:
     # ---------------------------------------------------------------------------------------------------------------- #
 
     def run(self):
-        JakubiWeeb(self).run()
+        # Reload local musics
+        # self.music.load(path=self.config.params.music_folder)
+
+        # Create and launch a discord application
+        app = JakubiweebApplication(self.config, self.musics)
+        app.run()
 
     # ================================================================================================================ #

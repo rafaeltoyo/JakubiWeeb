@@ -63,7 +63,11 @@ class Music(dict):
     def duration(self, v: float):
         self['duration'] = v
 
+    @property
+    def full_title(self) -> str:
+        return "[{0[idt]}] '{0[name]}' ({0.title})".format(self)
+
     def __str__(self):
         minutes, seconds = divmod(self.duration, 60)
         duration = (int(minutes), int(seconds),)
-        return "Music: '{0[name]}' by *{0[artists]}* [{1[0]}min {1[1]}sec] ({0[filename]})".format(self, duration)
+        return "[{0[idt]}] '{0[name]}' by *{0[artists]}* [{1[0]}min {1[1]}sec] ({0[title]})".format(self, duration)

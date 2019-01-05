@@ -25,16 +25,13 @@ class LocalMusicController:
         del self.__storage
 
     def init_db(self):
-        num_folder = 0
-        num_music = 0
-
         # Initialize Folder table
         try:
             r = self.__storage.folderDAO.count()
 
             if isinstance(r, list) and len(r) > 0:
-                num_folder = int(r[0][0])
-            print("Folders: {}".format(num_folder))
+                self.num_folder = int(r[0][0])
+            print("Folders: {}".format(self.num_folder))
 
         except OperationalError:
             print("Creating folder table ...")
@@ -47,8 +44,8 @@ class LocalMusicController:
             r = self.__storage.musicDAO.count()
 
             if isinstance(r, list) and len(r) > 0:
-                num_music = int(r[0][0])
-            print("Musics: {}".format(num_music))
+                self.num_music = int(r[0][0])
+            print("Musics: {}".format(self.num_music))
 
         except OperationalError:
             print("Creating music table ...")
