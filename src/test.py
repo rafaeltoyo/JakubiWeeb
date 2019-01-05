@@ -1,12 +1,8 @@
-from bot import Bot
+from app.application import Application
 
 try:
-    bot = Bot()
-    bot.load_music()
-    del bot
-
+    Application().run()
 except Exception as e:
     print(e)
     exit(-1)
-
 exit(0)

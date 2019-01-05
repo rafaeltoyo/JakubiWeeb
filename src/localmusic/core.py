@@ -14,6 +14,9 @@ class LocalMusicController:
     def __init__(self):
         self.music = []  # type: List[Music]
 
+        self.num_folder = 0
+        self.num_music = 0
+
         self.__loader = LocalMusicLoader()
         self.__storage = LocalMusicStorage()
 

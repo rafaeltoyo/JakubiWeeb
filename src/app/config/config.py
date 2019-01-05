@@ -1,5 +1,4 @@
 import json
-from pathlib import Path
 
 from .data import ConfigData
 from utils.filesystem import *
