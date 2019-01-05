@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from .request import Request, YTRequest, MP3Request
 
-from bot.dbcontroller import DBController
+from bot_legacy.dbcontroller import DBController
 
 
 # ==================================================================================================================== #
@@ -85,7 +85,7 @@ class VoiceState:
 
         if self.autoplay is None:
             self.autoplay = message
-            if self.songs.empty():
+            if self.songs.empty() and not self.is_playing():
                 await self.request_random_song()
             return True
         else:
@@ -97,7 +97,7 @@ class VoiceState:
         if self.autoplay is None:
             return
         music_id = rnd.randint(1, DBController().num_musics)
-        player = DBController().create_mp3_player(self, str(music_id))
+        player = DBController().create_music_player(self, str(music_id))
         await self.request_song(self.autoplay, player)
 
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):

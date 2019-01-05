@@ -9,7 +9,7 @@ from .voicechannel import VoiceStateFactory, VoiceState
 from utils.config import Config
 from utils.db import Database
 
-from bot.dbcontroller import DBController
+from bot_legacy.dbcontroller import DBController
 
 
 # ==================================================================================================================== #
@@ -178,7 +178,7 @@ class Jakubiweeb:
         player = None
 
         try:
-            player = DBController().create_mp3_player(state, song)
+            player = DBController().create_music_player(state, song)
 
         except Exception as e:
             player = None

@@ -12,3 +12,7 @@ CREATE TABLE IF NOT EXISTS music (
     fk_music_anime_id INTEGER NOT NULL,
     FOREIGN KEY(fk_music_anime_id) REFERENCES anime(id)
 );
+
+CREATE VIRTUAL TABLE IF NOT EXISTS search_tool
+                    USING FTS5(name, filename, artists, nickname, folder);
+DROP TABLE search_tool;

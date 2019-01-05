@@ -39,21 +39,41 @@ class ConfigData(object):
 class Config(object):
 
     def __init__(self, project: str = "JakubiWeeb", filename: str = "config.json"):
+        """
+        Create a configuration controller
+        :param project: Project name. Default: JakubiWeeb (from github)
+        :param filename: Configuration file name.
+        """
+        # Project name (folder name).
         self.project = project
+
         self.projectpath = self.__get_project_path()
         self.__configpath = self.projectpath + filename
+
+        # Entity with Config Data. Converts JSON file to Python class.
         self.config = ConfigData()
+
         self.load()
 
     def __get_project_path(self):
+        """
+        Get absolute path of project
+        :return: Absolute path of project
+        """
+
         p = os.path.abspath(__file__).split(os.path.sep)
-        if os.name == "nt":
+        if os.name == "nt":  # Windows
             p[0] += os.path.sep
         return os.path.join(*p[:p.index(self.project) + 1]) + os.path.sep
 
     def load(self):
+        """
+        Load config file
+        :return:
+        """
         try:
             fd = open(self.__configpath, 'r+')
+            # File -> Memory
             self.config = ConfigData.from_dict(json.loads(fd.read()))
             fd.close()
         except FileNotFoundError:
@@ -64,9 +84,16 @@ class Config(object):
             print("Invalid config file! Creating a new config.")
             self.config = ConfigData()
             self.save()
+        except Exception as e:
+            raise e
 
     def save(self):
+        """
+        Save config file
+        :return:
+        """
         data = json.dumps(self.config.to_dict(), ensure_ascii=False)
         fd = open(self.__configpath, 'w+')
+        # Memory -> File
         fd.write(data)
         fd.close()
