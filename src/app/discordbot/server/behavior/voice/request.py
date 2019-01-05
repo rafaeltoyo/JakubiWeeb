@@ -60,7 +60,7 @@ class YTRequest(Request):
         return '*{0.title}* uploaded by {0.uploader}'.format(self.player)
 
 
-class MP3Request(Request):
+class LMRequest(Request):
 
     def __init__(self, message: discord.Message, player: discord.voice_client.StreamPlayer):
         super().__init__(message, player)

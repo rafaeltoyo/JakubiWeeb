@@ -9,7 +9,7 @@ class MessageBuilder:
     def create_base_message(title: str, content: str, color: discord.Color):
         return discord.Embed(
             title=title,
-            content=content,
+            description=content,
             color=color)
 
     @staticmethod
@@ -36,5 +36,5 @@ class MessageBuilder:
     @staticmethod
     def create_simple_info(content: str):
         return discord.Embed(
-            content=content,
+            description=content,
             color=discord.Color.dark_blue())

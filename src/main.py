@@ -1,23 +1,21 @@
 import sys
-from bot_legacy.controller import Controller
-from bot_legacy.dbcontroller import DBController
-from utils.log import Log
+from app.application import Application
 
 
 def main():
-
-    # Main controller
-    c = Controller(*sys.argv[1:])
+    print('=' * 80)
+    print("Starting application ...")
+    print('=' * 80)
+    app = Application(*(sys.argv[1:]))
 
     try:
-        DBController().set_db(c.db)
-        print('=' * 80)
-        c.run()
+        app.run()
     except Exception as e:
-        Log().write("Runtime error: " + str(e))
         print(e)
+        exit(-1)
     finally:
-        del c
+        del app
+        exit(0)
 
 
 if __name__ == "__main__":
