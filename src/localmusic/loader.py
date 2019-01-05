@@ -5,15 +5,10 @@ from mutagen.mp4 import MP4
 from mutagen.flac import FLAC
 
 from .model import Music
-
-import utils.singleton as singleton
-
-
-class LMInvalidExtension(Exception):
-    pass
+from .exceptions import *
 
 
-class LocalMusicLoader(metaclass=singleton.Singleton):
+class LocalMusicLoader:
 
     def __init__(self):
         """
@@ -30,7 +25,7 @@ class LocalMusicLoader(metaclass=singleton.Singleton):
         """
         if path.suffix not in self.extension:
             msg = "Invalid extension! \"{0.suffix}\" not in [{1}].".format(path, ", ".join(self.extension))
-            raise LMInvalidExtension(msg)
+            raise LMInvalidExtensionException(msg)
         return path
 
     def _extract(self, path: Path):
@@ -40,10 +35,19 @@ class LocalMusicLoader(metaclass=singleton.Singleton):
         :param path: Path object with filename
         :return: List with meta-data
         """
+        # Parameters
         file = None
         title_tag = ""
         artist_tag = ""
 
+        # Return
+        data = {
+            'title': "",
+            'artists': "",
+            'duration': 0.0
+        }
+
+        # Check sufix and open music file
         if path.suffix == '.mp3':
             # MP3 File
             file = MP3(path)
@@ -60,17 +64,24 @@ class LocalMusicLoader(metaclass=singleton.Singleton):
             # FLAC File
             file = FLAC(path)
             title_tag = "title"
-            artist_tag = "artists"
+            artist_tag = "artist"
 
-        if file is None or title_tag not in file.keys() or artist_tag not in file.keys():
-            return ['', '']
+        # Check opening success and read data
+        if file is not None:
+            # Get music title
+            if title_tag in file.keys():
+                title = file.get(title_tag)
+                data['title'] = (str(title[0] if len(title) > 0 else "")) if isinstance(title, list) else str(title)
 
-        title = file.get(title_tag)
-        artist = file.get(artist_tag)
-        fixed_title = (str(title[0] if len(title) > 0 else "")) if isinstance(title, list) else str(title)
-        fixed_artist = "/".join(artist) if isinstance(artist, list) else str(artist)
+            # Get music artists (separated with '/')
+            if artist_tag in file.keys():
+                artist = file.get(artist_tag)
+                data['artists'] = "/".join(artist) if isinstance(artist, list) else str(artist)
 
-        return fixed_title, fixed_artist
+            # Get music lenght (seconds)
+            data['duration'] = float(file.info.length)
+
+        return data
 
     def _load_music(self, filename):
         """
@@ -84,28 +95,33 @@ class LocalMusicLoader(metaclass=singleton.Singleton):
         info = Music(title=path.stem, filename=str(path.absolute()))
 
         """ Extract info """
-        name, artists = self._extract(path)
-        info.name = name
-        info.artists = artists.replace("/", " & ")
+        data = self._extract(path)
+        info.name = data['title']
+        info.artists = data['artists'].replace("/", " & ")
+        info.duration = data['duration']
 
         return info
 
     def load(self, path):
         """
         Load and extract info from music folder or files.
-        :param filename: Music folder path or music filename (relative or absolute path).
+        :param path: Music folder path or music filename (relative or absolute path).
         :return: Music info object (iterable)
         """
+        # Fix path to absolute
         path = path if isinstance(path, Path) else Path(str(path))
+        # Check: path is file or folder
         if path.is_dir():
+            # If folder then check each file inside.
             for item in path.iterdir():
-                try:
-                    m = self._load_music(item)
-                    yield m
-                except LMInvalidExtension:
-                    pass
+                for i in self.load(item):
+                    yield i
         else:
-            yield self._load_music(path)
+            # If file then try to load as music
+            try:
+                yield self._load_music(path)
+            except LMInvalidExtensionException:
+                pass
 
     class Extensions(list):
 

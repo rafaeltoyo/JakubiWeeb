@@ -18,7 +18,7 @@ def synchronized(lock):
     return wrapper
 
 
-class Singleton(type):
+class SingletonOld(type):
     """
     Singleton thread-safe
     https://stackoverflow.com/questions/48111037/concurrent-singleton-class-python
@@ -29,11 +29,11 @@ class Singleton(type):
     @synchronized(lock)
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(SingletonOld, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
-class Singleton2(type):
+class Singleton(type):
     """
     Singleton thread-safe (unstable version).
     https://stackoverflow.com/questions/48111037/concurrent-singleton-class-python
@@ -46,13 +46,13 @@ class Singleton2(type):
     @synchronized(_lock)
     def __new__(mcs, name, bases, dct, *args, **kwargs):
         # Create class
-        cls = super(Singleton2, mcs).__new__(mcs, name, bases, dct)
+        cls = super(Singleton, mcs).__new__(mcs, name, bases, dct)
 
         # Create class element in instances list.
         # instance will be create with __call__()
         # we'll create a lock for each class
-        if cls not in Singleton2._instances:
-            Singleton2._instances[cls] = {
+        if cls not in Singleton._instances:
+            Singleton._instances[cls] = {
                 'instance': None,
                 'lock': threading.Lock()
             }
@@ -60,7 +60,7 @@ class Singleton2(type):
 
     def __call__(cls, *args, **kwargs):
         # Class element must be exist in list (created in __new__)
-        cls_item = Singleton2._instances[cls]
+        cls_item = Singleton._instances[cls]
 
         # Check to avoid lock if instance already exist
         if cls_item["instance"] is None:
@@ -71,6 +71,6 @@ class Singleton2(type):
                 # Double check because first check isn't thread safe
                 if cls_item["instance"] is None:
 
-                    cls_item["instance"] = super(Singleton2, cls).__call__(*args, **kwargs)
+                    cls_item["instance"] = super(Singleton, cls).__call__(*args, **kwargs)
 
         return cls_item["instance"]

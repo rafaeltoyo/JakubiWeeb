@@ -3,6 +3,9 @@ SELECT count(*)
 FROM anime;
 
 SELECT *
+FROM search_tool;
+
+SELECT *
 FROM anime
 LIMIT 42,45;
 

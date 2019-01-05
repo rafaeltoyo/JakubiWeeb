@@ -40,7 +40,7 @@ class Explorer:
 
         for root, dirs, files in os.walk(self.target):
             for dir in dirs:
-                yield root, dir
+                yield Path(root), dir
             if not self.recursive:
                 break
 
