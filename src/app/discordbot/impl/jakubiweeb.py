@@ -23,7 +23,9 @@ class JakubiweebApplication(MusicApplication):
 
     @commands.command(pass_context=True, no_pm=True, aliases=['wap', 'autoplay', 'ap', 'weebparty'])
     async def wautoplay(self, ctx: commands.Context):
-        """Autoplay weeb songs."""
+        """
+        Autoplay weeb songs.
+        """
         state = self.states.get(ctx.message.server)
 
         if not state.voice.is_connected():
@@ -38,11 +40,16 @@ class JakubiweebApplication(MusicApplication):
 
     @commands.command(pass_context=True, no_pm=True, aliases=['search', 'weebs'])
     async def wsearch(self, ctx: commands.Context, *, song: str):
-        """Search a weeb song."""
+        """
+        Search a weeb song.
+        """
         content = ""
         try:
             for music in self.musics.search_all(song, num=20):
-                content += str(music)
+                title = "[{0.idt}] **{0.name}** by __{0.artists}__ [{1}]".format(music, music.formatted_duration())
+                title = title[0:69] if len(title) > 70 else title
+                info = "*{0.title}* ".format(music, )
+                content += title + "\n\t" + info + "\n"
 
         except Exception as e:
             content = ""

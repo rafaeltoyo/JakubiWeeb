@@ -105,6 +105,11 @@ class VoiceState:
         if 0 < v < 1:
             self.__volume = v
 
+    def current_song(self):
+        if self.is_playing():
+            return self.player.search
+        return ""
+
     def is_playing(self):
         if self.__voice is None or self.__current is None:
             return False
@@ -165,6 +170,7 @@ class VoiceState:
 
         try:
             player = await self.__voice.create_ytdl_player(search, ytdl_options=opts, after=self.toggle_next)
+            player.search = player.title
         except Exception as e:
             error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
             await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
@@ -191,6 +197,7 @@ class VoiceState:
             player.title = music.full_title
             player.artist = music.artists
             player.duration = music.duration
+            player.search = music.name + " " + music.artists
         except Exception as e:
             error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
             await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
