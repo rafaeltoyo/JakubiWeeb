@@ -1,6 +1,9 @@
 from discord.ext import commands
 
+from ..enums import *
+from ..utils import *
 from .voice import BaseVoiceApplication
+from app.lyrics.genius import GeniusAPI
 
 
 class MusicApplication(BaseVoiceApplication):
@@ -90,5 +93,45 @@ class MusicApplication(BaseVoiceApplication):
             if not success:
                 return
         await state.voice.fn_request_yt_song(ctx.message, song)
+
+    # ================================================================================================================ #
+    #   Command lyrics
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=['ly'])
+    async def lyrics(self, ctx: commands.Context, *args):
+        """
+        Current song lyrics
+        """
+        state = self.states.get(ctx.message.server)
+
+        # Create search parameter
+        search = " ".join(args).strip()
+        if len(search) <= 0:
+            if state.voice.is_playing():
+                search = state.voice.current_song().strip()
+
+        if len(search.strip()) <= 0:
+            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_INVALID))
+            return
+
+        # Invoke API
+        lyrics = GeniusAPI(self.config.params.genius_apikey).get_lyrics(search)
+
+        # Lyrics return handler
+        if lyrics is not None and len(lyrics.content) > 0:
+            await self.bot.say(embed=MessageBuilder.create_info(
+                EnumMessages.LYRICS_SEARCH_RESULT,
+                "Link: {}".format(lyrics.source)))
+            output = ""
+            for i in lyrics.content.split("\n"):
+                if len(output) + len(i) > 1994:
+                    await self.bot.say("```{}```".format(output))
+                    output = ""
+                output += i + "\n"
+            if len(output.replace("\n", "")) > 0:
+                await self.bot.say("```{}```".format(output))
+        else:
+            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_NOT_FOUND))
 
     # ================================================================================================================ #

@@ -65,7 +65,7 @@ class Music(dict):
 
     @property
     def full_title(self) -> str:
-        return "**[{0[idt]}]** '{0[name]}' ({0.title})".format(self)
+        return "[{0[idt]}] *{0[name]}* ({0.title})".format(self)
 
     def formatted_duration(self) -> str:
         minutes, seconds = divmod(self.duration, 60)

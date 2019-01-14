@@ -66,4 +66,4 @@ class LMRequest(Request):
         super().__init__(message, player)
 
     def _title(self) -> str:
-        return '*{0.title}* by {0.artist}'.format(self.player)
+        return '{0.title} by {0.artist}'.format(self.player)
