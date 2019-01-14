@@ -21,7 +21,7 @@ class JakubiweebApplication(MusicApplication):
     #   Command local song autoplay
     # ---------------------------------------------------------------------------------------------------------------- #
 
-    @commands.command(pass_context=True, no_pm=True, aliases=['wap', 'autoplay', 'ap'])
+    @commands.command(pass_context=True, no_pm=True, aliases=['wap', 'autoplay', 'ap', 'weebparty'])
     async def wautoplay(self, ctx: commands.Context):
         """Autoplay weeb songs."""
         state = self.states.get(ctx.message.server)
@@ -87,3 +87,53 @@ class JakubiweebApplication(MusicApplication):
         await state.voice.fn_request_local_song(ctx.message, song)
 
     # ================================================================================================================ #
+    #   Command song lyrics search
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=[])
+    async def wlyrics(self, ctx: commands.Context, *, song: str):
+
+        from random import choice
+        from ..utils.lyrics import AnimeLyrics
+        from math import ceil
+
+        result = AnimeLyrics(song)
+
+        song_text = result.lyrics
+        n_embeds = ceil(len(song_text)/1850)
+
+        nomes = ['weeb', 'otaku', 'lolicon', 'ancap', 'woof', 'rebounce', 'rabetão', 'peixe']
+        adjetivos = ['safado', 'kawaii', 'ancapistão', 'de boas', 'palone', 'tbdc', 'estadista']
+
+        embed = discord.Embed(title='Ta aí, seu {} {}'.format(choice(nomes),choice(adjetivos)), color=0x46ff42)
+        await self.bot.send_message(ctx.message.channel, embed=embed)
+
+        if n_embeds == 1:
+            await self.bot.send_message(ctx.message.channel, content='```{}```'.format(song_text))
+        else:
+            embeds = [0 for i in range(n_embeds)]
+            lines = song_text.split('\n')
+            descriptions = [0 for i in range(n_embeds)]
+
+            counter = 0
+            n = 0
+            k = 1
+
+            while n < len(lines):
+                counter += len(lines[n])
+                if counter > k * 1850:
+                    counter -= len(lines[n])
+                    descriptions[k - 1] = '\n'.join(lines[:n])
+                    del lines[:n]
+                    n = 0
+                    k += 1
+                if k == n_embeds:
+                    descriptions[n_embeds - 1] = '\n'.join(lines[:])
+                    break
+
+            for i in range(n_embeds):
+                await self.bot.send_message(ctx.message.channel, content='```{}```'.format(descriptions[i]))
+
+
+
+

@@ -26,3 +26,7 @@ class EnumMessages:
     TITLE_SEARCH_RESULT = "Resultados:"
     CONTENT_SEARCH_RESULT_TTL_FLD = "Total animes:"
     CONTENT_SEARCH_RESULT_TTL_MSC = "Total músicas:"
+
+    #Lyrics
+    LYRICS_NOT_FOUND = "Não foi encontrada a letra da música requerida"
+    LYRICS_ERROR = "Ocorreu um erro na pesquisa da letra da música requerida"
