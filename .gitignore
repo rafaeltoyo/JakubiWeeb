@@ -5,6 +5,7 @@
 config.json
 database.db
 app/geckodriver.log
+.google-cookie
 
 
 ### PyCharm ###
