@@ -97,17 +97,25 @@ class JakubiweebApplication(MusicApplication):
     #   Command song lyrics search
     # ---------------------------------------------------------------------------------------------------------------- #
 
-    @commands.command(pass_context=True, no_pm=True, aliases=[])
-    async def wlyrics(self, ctx: commands.Context, *, song: str):
+    @commands.command(pass_context=True, no_pm=True, aliases=['lyrics', 'ly'])
+    async def wlyrics(self, ctx: commands.Context, *args):
 
         from random import choice
         from ..utils.lyrics import AnimeLyrics
         from math import ceil
 
+        song = ' '.join(args).strip()
+
+        if len(song) <= 0:
+            if self.states.get(ctx.message.server).voice.is_playing():
+                song = self.states.get(ctx.message.server).voice.current_song().strip()
+        else:
+            song = ' '.join(args)
+
         result = AnimeLyrics(song)
 
         song_text = result.lyrics
-        n_embeds = ceil(len(song_text)/1850)
+        n_msgs = ceil(len(song_text)/1850)
 
         nomes = ['weeb', 'otaku', 'lolicon', 'ancap', 'woof', 'rebounce', 'rabetão', 'peixe']
         adjetivos = ['safado', 'kawaii', 'ancapistão', 'de boas', 'palone', 'tbdc', 'estadista']
@@ -115,12 +123,11 @@ class JakubiweebApplication(MusicApplication):
         embed = discord.Embed(title='Ta aí, seu {} {}'.format(choice(nomes),choice(adjetivos)), color=0x46ff42)
         await self.bot.send_message(ctx.message.channel, embed=embed)
 
-        if n_embeds == 1:
+        if n_msgs == 1:
             await self.bot.send_message(ctx.message.channel, content='```{}```'.format(song_text))
         else:
-            embeds = [0 for i in range(n_embeds)]
             lines = song_text.split('\n')
-            descriptions = [0 for i in range(n_embeds)]
+            descriptions = [0 for i in range(n_msgs)]
 
             counter = 0
             n = 0
@@ -134,11 +141,11 @@ class JakubiweebApplication(MusicApplication):
                     del lines[:n]
                     n = 0
                     k += 1
-                if k == n_embeds:
-                    descriptions[n_embeds - 1] = '\n'.join(lines[:])
+                if k == n_msgs:
+                    descriptions[n_msgs - 1] = '\n'.join(lines[:])
                     break
 
-            for i in range(n_embeds):
+            for i in range(n_msgs):
                 await self.bot.send_message(ctx.message.channel, content='```{}```'.format(descriptions[i]))
 
 
