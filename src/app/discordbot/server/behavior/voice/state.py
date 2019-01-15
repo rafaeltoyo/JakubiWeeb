@@ -249,7 +249,7 @@ class VoiceState:
     async def fn_skip_song(self, message: discord.Message):
 
         # FIXME: Create skip handler class
-        skip_nedded = max(0, min(1, np.ceil(len(message.server.members) / 2.0)))
+        skip_nedded = max(1, np.ceil(len(message.server.members) / 2.0))
 
         if not self.is_playing():
             # Not playing any music right now
@@ -271,6 +271,7 @@ class VoiceState:
             if total_votes >= skip_nedded:
                 # Skip vote passed, skipping song
                 await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_VOT_SKIP))
+                self.skip()
             else:
                 # Needs more vote
                 await self.bot.say(embed=MessageBuilder.create_simple_info(
