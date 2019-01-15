@@ -54,12 +54,20 @@ class VoiceState:
         self.play_next_song = asyncio.Event()
         # songs queue
         self.songs = asyncio.Queue()
+
+        # ------------------------------------------------------------------------------------------------------------ #
+        #   Skip
+
         # a set of user_ids that voted
         self.skip_votes = set()
+        # skip set locker
+        self.__skip_lock = asyncio.Lock()
 
         # ------------------------------------------------------------------------------------------------------------ #
         #   Audio Player Task
         self.audio_player = self.bot.loop.create_task(self.audio_player_task())
+
+        # ------------------------------------------------------------------------------------------------------------ #
 
     def unload(self):
         if self.is_connected():
@@ -248,36 +256,52 @@ class VoiceState:
 
     async def fn_skip_song(self, message: discord.Message):
 
-        # FIXME: Create skip handler class
-        skip_nedded = max(0, min(1, np.ceil(len(message.server.members) / 2.0)))
-
+        """ IS_PLAYING """
         if not self.is_playing():
             # Not playing any music right now
             await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_WTOUT_MS))
             return
 
-        # Skipping music
         # Get skip author
         voter = message.author
+        # Get author channel
+        voter_channel: discord.Channel = message.author.voice_channel
+        # Get bot channel
+        bot_channel: discord.Channel = self.__voice.channel
+        # skip needed
+        skip_needed = max(1, np.ceil(len(bot_channel.voice_members) / 2.0))
+
+        """ SAME_CHANNEL """
+        if voter_channel != bot_channel:
+            await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_SAME_CHL))
+            return
+
+        await self.__skip_lock.acquire()
 
         if voter == self.__current.message.author:
-            # Requester requested skipping song
+            """ Requester requested skipping song """
             await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_REQ_SKIP))
             self.skip()
+
         elif voter.id not in self.skip_votes:
-            # You have not voted yet
+            """ You have not voted yet """
             self.skip_votes.add(voter.id)
             total_votes = len(self.skip_votes)
-            if total_votes >= skip_nedded:
+
+            if total_votes >= skip_needed:
                 # Skip vote passed, skipping song
                 await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_VOT_SKIP))
+                self.skip()
             else:
                 # Needs more vote
                 await self.bot.say(embed=MessageBuilder.create_simple_info(
-                    EnumMessages.CONTENT_SKIP_VOT_WAIT.format(total_votes, skip_nedded)))
+                    EnumMessages.CONTENT_SKIP_VOT_WAIT.format(total_votes, skip_needed)))
+
         else:
-            # You have already voted to skip this song
+            """ You have already voted to skip this song """
             await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_ALRD_VOT))
+
+        self.__skip_lock.release()
 
     async def fn_now_playing(self):
         if self.is_playing():
@@ -338,7 +362,7 @@ class VoiceState:
                 # delete "playing" message
                 try:
                     await self.bot.delete_message(msg)
-                except:
+                except Exception as e:
                     pass
             except asyncio.CancelledError as e:
                 return

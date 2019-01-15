@@ -48,7 +48,7 @@ class Application:
 
     def run(self):
         # Reload local musics
-        ###################################################self.musics.load(path=self.config.params.music_folder)
+        # self.musics.load(path=self.config.params.music_folder)
 
         # Create and launch a discord application
         app = JakubiweebApplication(self.config, self.musics)

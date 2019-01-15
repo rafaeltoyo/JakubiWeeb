@@ -11,6 +11,7 @@ class EnumMessages:
     CONTENT_SKIP_REQ_SKIP = "Requester requested skipping song..."
     CONTENT_SKIP_VOT_SKIP = "Skip vote passed, skipping song..."
     CONTENT_SKIP_VOT_WAIT = "Skip vote added, currently at [{}/{}]"
+    CONTENT_SKIP_SAME_CHL = "You aren't in the bot voice channel..."
     CONTENT_SKIP_WTOUT_MS = "Not playing any music right now..."
     CONTENT_SKIP_ALRD_VOT = "You have already voted to skip this song."
 
