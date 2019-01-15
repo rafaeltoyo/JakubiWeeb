@@ -9,6 +9,7 @@ from .request import Request, YTRequest, LMRequest
 from ....enums import *
 from ....utils import *
 from .....localmusic import LocalMusicController
+from ....utils.queue import MusicQueue
 
 
 class VoiceState:
@@ -60,6 +61,10 @@ class VoiceState:
         # ------------------------------------------------------------------------------------------------------------ #
         #   Audio Player Task
         self.audio_player = self.bot.loop.create_task(self.audio_player_task())
+
+        #------------------------------------------------------------------------------------------------------------- #
+        #   Txt queue
+        self.queue = MusicQueue()
 
     def unload(self):
         if self.is_connected():
@@ -175,6 +180,9 @@ class VoiceState:
             error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
             await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
             return False
+
+        self.queue.add_music(search) # Adiciona ao txt
+
         await self.request_song(message, player)
         return True
 
@@ -202,6 +210,9 @@ class VoiceState:
             error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
             await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
             return False
+
+        self.queue.add_music(search)  # Adiciona ao txt
+
         await self.request_song(message, player)
         return True
 
@@ -263,6 +274,9 @@ class VoiceState:
         if voter == self.__current.message.author:
             # Requester requested skipping song
             await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_REQ_SKIP))
+
+            self.queue.skip_music() # Tira o primeiro índice da lista de queue
+
             self.skip()
         elif voter.id not in self.skip_votes:
             # You have not voted yet
@@ -270,6 +284,7 @@ class VoiceState:
             total_votes = len(self.skip_votes)
             if total_votes >= skip_nedded:
                 # Skip vote passed, skipping song
+                self.queue.skip_music()  # Tira o primeiro índice da lista de queue
                 await self.bot.say(embed=MessageBuilder.create_simple_info(EnumMessages.CONTENT_SKIP_VOT_SKIP))
             else:
                 # Needs more vote

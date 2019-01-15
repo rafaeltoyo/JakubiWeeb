@@ -91,7 +91,8 @@ class JakubiweebApplication(MusicApplication):
             success = await ctx.invoke(self.summon)
             if not success:
                 return
-        await state.voice.fn_request_local_song(ctx.message, song)
+        player = await state.voice.fn_request_local_song(ctx.message, song)
+
 
     # ================================================================================================================ #
     #   Command song lyrics search
@@ -112,7 +113,12 @@ class JakubiweebApplication(MusicApplication):
         else:
             song = ' '.join(args)
 
-        result = AnimeLyrics(song)
+        try:
+            result = AnimeLyrics(song)
+        except Exception as e:
+            print('Exceção na pesquisa de letras: '+str(e))
+            await self.bot.send_message(ctx.message.channel, embed=MessageBuilder.create_error('Erro na pesquisa de letra para a música '+self.search_term))
+            return
 
         song_text = result.lyrics
         n_msgs = ceil(len(song_text)/1850)
@@ -147,6 +153,27 @@ class JakubiweebApplication(MusicApplication):
 
             for i in range(n_msgs):
                 await self.bot.send_message(ctx.message.channel, content='```{}```'.format(descriptions[i]))
+
+    # ================================================================================================================ #
+    #   Queue functions
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=['queue'])
+    async def wqueue(self, ctx: commands.Context):
+        state = self.states.get(ctx.message.server)
+
+        embed = discord.Embed(title='Fila de músicas', color=0x5179d9)
+
+        string = ''
+        for index, music in enumerate(state.voice.queue.get_queue()):
+            embed.add_field(name='[{}]'.format(str(index+1)), value=music, inline=False)
+        await self.bot.send_message(ctx.message.channel, embed=embed)
+
+
+
+
+
+
 
 
 
