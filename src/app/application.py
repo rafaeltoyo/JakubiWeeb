@@ -3,6 +3,8 @@ from .discordbot import JakubiweebApplication
 from .config import Config
 from .localmusic import LocalMusicController
 
+from utils.log.manager import LogManager
+
 
 class Application:
 
