@@ -21,14 +21,32 @@ class MusicQueue:
             queue.truncate()
         self._load_queue()
 
-    #TODO: remover por index
+    #TODO: remover do queue por index ou nome da música?
     def remove_music(self, song='', index=9999):
-        with open(self.path, 'r+') as queue:
-            queue_list = queue.readlines()
-            queue_list.remove(song,1)
-            queue.seek(0)
-            queue.write('\n'.join(queue_list))
-            queue.truncate()
+        if song != '':
+            with open(self.path, 'r+') as queue:
+                queue_list = queue.readlines()
+                queue_list.remove(song,1)
+
+                if len(queue_list) == 0:
+                    self.remove_queue()
+                    return
+
+                queue.seek(0)
+                queue.truncate()
+        else:
+            with open(self.path, 'r+') as queue:
+                queue_list = queue.readlines()
+                del queue_list[index]
+
+                if len(queue_list) == 0:
+                    self.remove_queue()
+                    return
+
+                queue.write(''.join(queue_list))
+                queue.seek(0)
+                queue.truncate()
+
         self._load_queue()
 
     def skip_music(self):
@@ -36,11 +54,15 @@ class MusicQueue:
         with open(self.path, 'r+') as queue:
             queue_list = queue.readlines()[1:]
             queue.seek(0)
-            queue.write('\n'.join(queue_list))
+
+            if len(queue_list) == 0:
+                self.remove_queue()
+                return
+
+            queue.write(''.join(queue_list))
             queue.truncate()
         self._load_queue()
 
-    #TODO: jump_to por index
     def jump_to(self, song='', index=9999):
         if song != '':
             with open(self.path, 'r+') as queue:
@@ -53,13 +75,26 @@ class MusicQueue:
                     print("Erro na seleção de música para pular no queue")
                     return
                 queue.seek(0)
-                queue.write('\n'.join(self.queue_list[n_song:]))
+                queue_list = self.queue_list[n_song:]
+
+                if len(queue_list) == 0:
+                    self.remove_queue()
+                    return
+
+                queue.write(''.join())
                 queue.truncate()
         else:
             with open(self.path, 'r+') as queue:
                 n_song = index
                 queue.seek(0)
-                queue.write('\n'.join(self.queue_list[n_song:]))
+
+                queue_list = self.queue_list[n_song:]
+
+                if len(queue_list) == 0:
+                    self.remove_queue()
+                    return
+
+                queue.write(''.join())
                 queue.truncate()
         self._load_queue()
 
@@ -70,3 +105,4 @@ class MusicQueue:
         with open(self.path, 'w') as queue:
             print("Arquivo de queue limpo")
             queue.write('')
+        self._load_queue()

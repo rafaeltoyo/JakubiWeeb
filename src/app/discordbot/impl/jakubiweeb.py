@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 
+from os.path import abspath
+
 from ..enums import *
 from ..utils import *
 from ...config import Config
@@ -16,7 +18,13 @@ class JakubiweebApplication(MusicApplication):
         JakubiWeeb application
         """
         super().__init__(config, musics)
-        self.states.get(commands.Context.message.channel).voice.queue.remove_queue() # Reinicia o queue
+        self.remove_queue()
+
+    def remove_queue(self):
+        with open(abspath('queue.txt'), 'w') as queue:
+            print("Arquivo de queue limpo")
+            queue.write('')
+
 
     # ================================================================================================================ #
     #   Command local song autoplay
