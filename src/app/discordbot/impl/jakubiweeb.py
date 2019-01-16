@@ -97,7 +97,7 @@ class JakubiweebApplication(MusicApplication):
     #   Command song lyrics search
     # ---------------------------------------------------------------------------------------------------------------- #
 
-    @commands.command(pass_context=True, no_pm=True, aliases=['lyrics', 'ly'])
+    @commands.command(pass_context=True, no_pm=True, aliases=['wly'])
     async def wlyrics(self, ctx: commands.Context, *args):
 
         from random import choice
