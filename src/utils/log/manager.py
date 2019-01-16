@@ -1,7 +1,6 @@
 
 import datetime
 import os
-import enum
 from pathlib import Path
 
 from ..filesystem import PathBuilder
@@ -18,11 +17,19 @@ class Buffer:
     def __get_prefix(self) -> str:
         return "{} {}: ".format(self.__prefix, datetime.datetime.now())
 
+    def __create_log(self):
+
+        if not self.__buffer.is_file():
+            os.makedirs(os.path.dirname(self.__buffer), exist_ok=True)
+            with self.__buffer.open('w+') as f:
+                f.write("Log created at " + datetime.datetime.now().__str__() + '\n')
+
     def print(self, m):
         if self.__prefix is not None:
             m = self.__get_prefix() + m
         if self.__buffer is not None:
-            with self.__buffer.open('w+') as f:
+            self.__create_log()
+            with self.__buffer.open('a') as f:
                 f.write(m)
             if self.__console:
                 print(m)
@@ -30,7 +37,7 @@ class Buffer:
             print(m)
 
     def println(self, m):
-        self.print(str(m) + os.linesep)
+        self.print(str(m) + "\n")
 
 
 class LogManager(metaclass=Singleton):
