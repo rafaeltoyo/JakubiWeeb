@@ -10,9 +10,10 @@ from ..singleton import Singleton
 
 class Buffer:
 
-    def __init__(self, filename=None, prefix=None):
+    def __init__(self, filename=None, prefix: str = None, console: bool = False):
         self.__buffer = Path(str(filename)) if filename is not None else None
         self.__prefix = prefix
+        self.__console = console
 
     def __get_prefix(self) -> str:
         return "{} {}: ".format(self.__prefix, datetime.datetime.now())
@@ -23,6 +24,8 @@ class Buffer:
         if self.__buffer is not None:
             with self.__buffer.open('w+') as f:
                 f.write(m)
+            if self.__console:
+                print(m)
         else:
             print(m)
 
