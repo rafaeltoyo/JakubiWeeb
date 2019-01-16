@@ -14,9 +14,10 @@ class MusicQueue:
         print("ADD")
         with open(self.path, 'r+') as queue:
             queue_list = queue.readlines()
-            queue_list.append(song)
+            print(queue_list)
+            queue_list.append(song+'\n')
             queue.seek(0)
-            queue.write('\n'.join(queue_list))
+            queue.write(''.join(queue_list))
             queue.truncate()
         self._load_queue()
 
@@ -39,6 +40,7 @@ class MusicQueue:
             queue.truncate()
         self._load_queue()
 
+    #TODO: jump_to por index
     def jump_to(self, song='', index=9999):
         if song != '':
             with open(self.path, 'r+') as queue:
@@ -53,9 +55,18 @@ class MusicQueue:
                 queue.seek(0)
                 queue.write('\n'.join(self.queue_list[n_song:]))
                 queue.truncate()
-            self._load_queue()
+        else:
+            with open(self.path, 'r+') as queue:
+                n_song = index
+                queue.seek(0)
+                queue.write('\n'.join(self.queue_list[n_song:]))
+                queue.truncate()
+        self._load_queue()
 
     def get_queue(self):
         return self.queue_list
 
-    #TODO: Clear queue pra qdo o bot boota
+    def remove_queue(self):
+        with open(self.path, 'w') as queue:
+            print("Arquivo de queue limpo")
+            queue.write('')

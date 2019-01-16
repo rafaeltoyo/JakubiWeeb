@@ -16,6 +16,7 @@ class JakubiweebApplication(MusicApplication):
         JakubiWeeb application
         """
         super().__init__(config, musics)
+        self.states.get(commands.Context.message.channel).voice.queue.remove_queue() # Reinicia o queue
 
     # ================================================================================================================ #
     #   Command local song autoplay
@@ -166,12 +167,31 @@ class JakubiweebApplication(MusicApplication):
 
         string = ''
         for index, music in enumerate(state.voice.queue.get_queue()):
-            embed.add_field(name='[{}]'.format(str(index+1)), value=music, inline=False)
+            embed.add_field(name='[{}]'.format(str(index)), value=music, inline=False)
         await self.bot.send_message(ctx.message.channel, embed=embed)
 
+    # ================================================================================================================ #
+    #   Jump to another enqueued song
+    # ---------------------------------------------------------------------------------------------------------------- #
+    @commands.command(pass_context=True, no_pm=True, aliases=['goto'])
+    async def jump_to(self, ctx:commands.Context, index:int):
+        state = self.states.get(ctx.message.server)
 
+        if index <= 0:
+            await self.bot.send_message(ctx.message.channel, embed=MessageBuilder.create_error('O índice de goto deve ser maior do que 0'))
 
+        #index nao pode ser negativo nem 0
+        initial_queue_size = state.voice.songs.qsize()
 
+        while state.voice.songs.qsize() > initial_queue_size - (index-1):
+            await state.voice.songs.get()
+        state.voice.skip()
+
+        state.voice.queue.jump_to(index=index)
+
+        embed = MessageBuilder.create_simple_info('Goto música {}'.format(str(index)))
+
+        await self.bot.send_message(ctx.message.channel, embed=embed)
 
 
 
