@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 
-from ..baseapi import BaseAPI, Lyrics
+from ..baseapi import BaseAPI
+from ...lyrics import Lyrics
 
 # https://genius.com/api-clients
 
