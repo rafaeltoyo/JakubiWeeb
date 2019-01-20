@@ -121,20 +121,23 @@ class MusicApplication(BaseVoiceApplication):
         if len(search_term) <= 0:
             if state.voice.is_playing():
                 search_term = state.voice.current_song().strip()
-
-        if len(search_term.strip()) <= 0:
-            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_INVALID))
-            return
+            else:
+                await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_INVALID))
+                return
 
         from random import choice
         nomes = ['weeb', 'otaku', 'lolicon', 'ancap', 'woof', 'rebounce', 'rabetão', 'peixe']
         adjetivos = ['safado', 'kawaii', 'ancapistão', 'de boas', 'palone', 'tbdc', 'estadista']
         content = "Ta aí, seu {} {}.".format(choice(nomes), choice(adjetivos))
 
-        # Google search
-        lyrics = self.__lyrics.search(search_term)
-        # Invoke API
-        # lyrics = GeniusAPI(self.config.params.genius_apikey).get_lyrics(search_term)
+        try:
+            # Google search
+            lyrics = self.lyrics.search(search_term)
+            # Invoke API
+            # lyrics = GeniusAPI(self.config.params.genius_apikey).get_lyrics(search_term)
+        except Exception as e:
+            print('Exceção na pesquisa de letras: ' + str(e))
+            lyrics = None
 
         # Lyrics return handler
         if lyrics is not None and len(lyrics.content) > 0:
@@ -150,6 +153,7 @@ class MusicApplication(BaseVoiceApplication):
             if len(output.replace("\n", "")) > 0:
                 await self.bot.say("```{}```".format(output))
         else:
-            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_NOT_FOUND))
+            await self.bot.say(
+                embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_NOT_FOUND.format(search_term)))
 
 # ==================================================================================================================== #

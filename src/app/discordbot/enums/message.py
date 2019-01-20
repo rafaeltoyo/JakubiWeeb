@@ -35,5 +35,5 @@ class EnumMessages:
 
     # Lyrics
     LYRICS_SEARCH_INVALID = "Está faltando um resistor de pull-up"
-    LYRICS_SEARCH_NOT_FOUND = "Não tem esse Capacitor na Beta ..."
+    LYRICS_SEARCH_NOT_FOUND = "Não tem esse Capacitor '{}' na Beta ..."
     LYRICS_SEARCH_RESULT = "Historinha do Steinmetz:"
