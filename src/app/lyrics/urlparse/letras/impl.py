@@ -17,4 +17,4 @@ class LetrasMus(LyricsWebsite):
         html = urllib.request.urlopen(url).read().decode()
         lyrics = html.split('<article>')[1].split('</article>')[0].replace('<p>', '\n').replace('</p>', '\n').replace(
             '<br/>', '\n')
-        return Lyrics(url, lyrics)
+        return Lyrics(lyrics, url)

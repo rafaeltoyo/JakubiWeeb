@@ -17,4 +17,4 @@ class Smule(LyricsWebsite):
         html = urllib.request.urlopen(url).read().decode()
         lyrics = html.split('<div class="lyrics content ">')[1].split('</div>')[0].replace('<p>', '\n').replace(
             '</p>', '\n').replace('<br>', '\n')
-        return Lyrics(url, lyrics)
+        return Lyrics(lyrics, url)

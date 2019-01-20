@@ -21,4 +21,4 @@ class AnimeLyrics(LyricsWebsite):
         lyrics = ', '.join(
             [div.text.replace('\xa0', ' ').strip() for div in soup.find_all('td', {'class': 'romaji'})])
         content = title + "\n\n" + lyrics
-        return Lyrics(url, content)
+        return Lyrics(content, url)
