@@ -5,17 +5,18 @@ from ..enums import *
 from ..utils import *
 from ...config import Config
 from ...localmusic import LocalMusicController
+from ...lyrics.urlparse.manager import LyricsSearchManager
 
 from .music import MusicApplication
 
 
 class JakubiweebApplication(MusicApplication):
 
-    def __init__(self, config: Config, musics: LocalMusicController):
+    def __init__(self, config: Config, musics: LocalMusicController, lyrics: LyricsSearchManager):
         """
         JakubiWeeb application
         """
-        super().__init__(config, musics)
+        super().__init__(config, musics, lyrics)
 
     # ================================================================================================================ #
     #   Command local song autoplay
@@ -94,60 +95,3 @@ class JakubiweebApplication(MusicApplication):
         await state.voice.fn_request_local_song(ctx.message, song)
 
     # ================================================================================================================ #
-    #   Command song lyrics search
-    # ---------------------------------------------------------------------------------------------------------------- #
-
-    @commands.command(pass_context=True, no_pm=True, aliases=['wly'])
-    async def wlyrics(self, ctx: commands.Context, *args):
-
-        from random import choice
-        from ..utils.lyrics import AnimeLyrics
-        from math import ceil
-
-        song = ' '.join(args).strip()
-
-        if len(song) <= 0:
-            if self.states.get(ctx.message.server).voice.is_playing():
-                song = self.states.get(ctx.message.server).voice.current_song().strip()
-        else:
-            song = ' '.join(args)
-
-        result = AnimeLyrics(song)
-
-        song_text = result.lyrics
-        n_msgs = ceil(len(song_text)/1850)
-
-        nomes = ['weeb', 'otaku', 'lolicon', 'ancap', 'woof', 'rebounce', 'rabetão', 'peixe']
-        adjetivos = ['safado', 'kawaii', 'ancapistão', 'de boas', 'palone', 'tbdc', 'estadista']
-
-        embed = discord.Embed(title='Ta aí, seu {} {}'.format(choice(nomes),choice(adjetivos)), color=0x46ff42)
-        await self.bot.send_message(ctx.message.channel, embed=embed)
-
-        if n_msgs == 1:
-            await self.bot.send_message(ctx.message.channel, content='```{}```'.format(song_text))
-        else:
-            lines = song_text.split('\n')
-            descriptions = [0 for i in range(n_msgs)]
-
-            counter = 0
-            n = 0
-            k = 1
-
-            while n < len(lines):
-                counter += len(lines[n])
-                if counter > k * 1850:
-                    counter -= len(lines[n])
-                    descriptions[k - 1] = '\n'.join(lines[:n])
-                    del lines[:n]
-                    n = 0
-                    k += 1
-                if k == n_msgs:
-                    descriptions[n_msgs - 1] = '\n'.join(lines[:])
-                    break
-
-            for i in range(n_msgs):
-                await self.bot.send_message(ctx.message.channel, content='```{}```'.format(descriptions[i]))
-
-
-
-

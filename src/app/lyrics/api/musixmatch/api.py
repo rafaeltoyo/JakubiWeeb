@@ -1,6 +1,7 @@
 import requests
 
-from ..baseapi import BaseAPI, Lyrics
+from ..baseapi import BaseAPI
+from ...lyrics import Lyrics
 
 # https://developer.musixmatch.com/documentation
 

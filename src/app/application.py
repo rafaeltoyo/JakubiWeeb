@@ -2,6 +2,7 @@ from .discordbot import JakubiweebApplication
 
 from .config import Config
 from .localmusic import LocalMusicController
+from .lyrics import LyricsSearchManager, AnimeLyrics, LetrasMus, Smule
 
 from utils.log.manager import LogManager
 
@@ -21,11 +22,18 @@ class Application:
         # Local music controller
         self.musics = LocalMusicController()
 
+        # Lyrics search service
+        self.lyrics = LyricsSearchManager()
+        self.lyrics.add(AnimeLyrics())
+        self.lyrics.add(LetrasMus())
+        self.lyrics.add(Smule())
+
         self.__start(*args)
 
     def __del__(self):
         del self.config
         del self.musics
+        del self.lyrics
 
     # ================================================================================================================ #
     #   Start
@@ -53,7 +61,7 @@ class Application:
         # self.musics.load(path=self.config.params.music_folder)
 
         # Create and launch a discord application
-        app = JakubiweebApplication(self.config, self.musics)
+        app = JakubiweebApplication(self.config, self.musics, self.lyrics)
         app.run()
 
     # ================================================================================================================ #

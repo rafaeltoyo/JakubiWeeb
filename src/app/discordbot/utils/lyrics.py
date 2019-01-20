@@ -5,15 +5,16 @@ from googlesearch import search
 import urllib.request
 from urllib.parse import urlparse as parse
 
+
 class AnimeLyrics:
 
     def __init__(self, keyword):
         self.search_term = keyword
-        self.soup:BeautifulSoup
-        self.page_url:str
-        self.website:str
-        self.title:str
-        self.lyrics:str
+        self.soup: BeautifulSoup
+        self.page_url: str
+        self.website: str
+        self.title: str
+        self.lyrics: str
 
         self.load_results() #Inicializa a busca pela letra
 
