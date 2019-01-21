@@ -29,7 +29,11 @@ class MusicApplication(BaseVoiceApplication):
         Shows info about the currently played song.
         """
         state = self.states.get(ctx.message.server)
-        await state.voice.fn_now_playing()
+
+        if state.voice.is_playing():
+            await self.bot.say(embed=state.voice.current.message_playing())
+        else:
+            await self.bot.say(embed=MessageBuilder.create_alert(EnumMessages.ERROR_NOT_PLAYING))
 
     # ================================================================================================================ #
     #   Command skip
@@ -84,6 +88,77 @@ class MusicApplication(BaseVoiceApplication):
         await state.voice.volume(float(volume / 100.0))
 
     # ================================================================================================================ #
+    #   Command queue
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=['q'])
+    async def queue(self, ctx: commands.Context, *args):
+        """
+        Display current queue.
+        $queue OR $queue [page:int]
+        """
+        state = self.states.get(ctx.message.server)
+
+        if len(args) == 0:
+            await state.voice.fn_show_queue(page=1)
+        elif len(args) == 1:
+            try:
+                page = int(args[0])
+            except:
+                await self.bot.say(embed=MessageBuilder.create_error("Tem coisa errada ai filhão!"))
+            else:
+                await state.voice.fn_show_queue(page=page)
+        else:
+            await self.bot.say(embed=MessageBuilder.create_error("Tem coisa demais ai filhão!"))
+
+    # ================================================================================================================ #
+    #   Command remove
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=['r', 'rem', 'remv', 'delete', 'del'])
+    async def remove(self, ctx: commands.Context, song_id: int):
+        """
+        Go to specific song in queue
+        """
+        state = self.states.get(ctx.message.server)
+        try:
+            item = await state.voice.songs.remove(song_id)
+        except IndexError as e:
+            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.ERROR_NOT_FOUND))
+            print(e)
+        except RuntimeError as e:
+            await self.bot.say(embed=MessageBuilder.create_error("Fila vazia!"))
+            print(e)
+        else:
+            if state.voice.is_playing() and state.voice.current == item:
+                print(state.voice.current.player.title)
+                print(item.player.title)
+                state.voice.skip()
+            if item is not None:
+                del item
+
+    # ================================================================================================================ #
+    #   Command goto
+    # ---------------------------------------------------------------------------------------------------------------- #
+
+    @commands.command(pass_context=True, no_pm=True, aliases=['goto', 'jump'])
+    async def jumpto(self, ctx: commands.Context, song_id: int):
+        """
+        Go to specific song in queue
+        """
+        state = self.states.get(ctx.message.server)
+        try:
+            await state.voice.songs.goto(song_id)
+        except IndexError as e:
+            await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.ERROR_NOT_FOUND))
+            print(e)
+        except RuntimeError as e:
+            await self.bot.say(embed=MessageBuilder.create_error("Fila vazia!"))
+            print(e)
+        else:
+            state.voice.skip()
+
+    # ================================================================================================================ #
     #   Command play
     # ---------------------------------------------------------------------------------------------------------------- #
 
@@ -103,7 +178,12 @@ class MusicApplication(BaseVoiceApplication):
             success = await ctx.invoke(self.summon)
             if not success:
                 return
-        await state.voice.fn_request_yt_song(ctx.message, song)
+
+        try:
+            player = await state.voice.create_ytdl_song_player(song)
+            await state.voice.request_song(ctx.message, player)
+        except Exception as e:
+            await self.bot.say(embed=MessageBuilder.create_error(e))
 
     # ================================================================================================================ #
     #   Command lyrics
@@ -120,7 +200,7 @@ class MusicApplication(BaseVoiceApplication):
         search_term = " ".join(args).strip()
         if len(search_term) <= 0:
             if state.voice.is_playing():
-                search_term = state.voice.current_song().strip()
+                search_term = state.voice.current_song_search().strip()
             else:
                 await self.bot.say(embed=MessageBuilder.create_error(EnumMessages.LYRICS_SEARCH_INVALID))
                 return

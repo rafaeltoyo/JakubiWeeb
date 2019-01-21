@@ -1,3 +1,4 @@
+
 class LMInvalidExtensionException(Exception):
     """
     LocalMusic: Invalid music file extension.

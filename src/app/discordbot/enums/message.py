@@ -7,6 +7,9 @@ class EnumMessages:
     # Summon
     ERROR_1 = "You are not in a voice channel."
 
+    ERROR_NOT_PLAYING = "Not playing any music right now ..."
+    ERROR_NOT_FOUND = "Não tem esse CI na Beta ..."
+
     # Skip message
     CONTENT_SKIP_REQ_SKIP = "Requester requested skipping song..."
     CONTENT_SKIP_VOT_SKIP = "Skip vote passed, skipping song..."

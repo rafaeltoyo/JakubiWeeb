@@ -31,7 +31,7 @@ class ServerController:
         """
         state = self.__states.get(server.id)
         if state is None:
-            state = ServerState(self.__bot, self.__musics)
+            state = ServerState(server, self.__bot, self.__musics)
             self.__states[server.id] = state
         return state
 
