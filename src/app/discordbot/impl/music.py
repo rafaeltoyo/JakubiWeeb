@@ -16,7 +16,7 @@ class MusicApplication(BaseVoiceApplication):
         self.__lyrics = lyrics
 
     @property
-    def lyrics(self) -> LyricsSearchManager:
+    def lyrics_search(self) -> LyricsSearchManager:
         return self.__lyrics
 
     # ================================================================================================================ #
@@ -183,7 +183,7 @@ class MusicApplication(BaseVoiceApplication):
             player = await state.voice.create_ytdl_song_player(song)
             await state.voice.request_song(ctx.message, player)
         except Exception as e:
-            await self.bot.say(embed=MessageBuilder.create_error(e))
+            await self.bot.say(embed=MessageBuilder.create_error(str(e)))
 
     # ================================================================================================================ #
     #   Command lyrics
@@ -212,7 +212,7 @@ class MusicApplication(BaseVoiceApplication):
 
         try:
             # Google search
-            lyrics = self.lyrics.search(search_term)
+            lyrics = self.lyrics_search.search(search_term)
             # Invoke API
             # lyrics = GeniusAPI(self.config.params.genius_apikey).get_lyrics(search_term)
         except Exception as e:
