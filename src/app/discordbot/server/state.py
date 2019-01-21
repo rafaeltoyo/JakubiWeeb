@@ -6,13 +6,14 @@ from ...localmusic import LocalMusicController
 
 
 class ServerState:
-    def __init__(self, bot: commands.Bot, musics: LocalMusicController = None):
+    def __init__(self, server: discord.Server, bot: commands.Bot, musics: LocalMusicController = None):
         """
         ServerState
         :param bot:
         """
-        self.bot = bot                              # type: commands.Bot
-        self.voice = VoiceState(self.bot, musics)   # type: VoiceState
+        self.server: discord.Server = server
+        self.bot: commands.Bot = bot
+        self.voice: VoiceState = VoiceState(server, self.bot, musics)
 
     async def summon(self, channel: discord.Channel):
         """

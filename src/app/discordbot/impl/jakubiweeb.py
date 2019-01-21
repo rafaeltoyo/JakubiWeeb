@@ -92,6 +92,11 @@ class JakubiweebApplication(MusicApplication):
             success = await ctx.invoke(self.summon)
             if not success:
                 return
-        await state.voice.fn_request_local_song(ctx.message, song)
+
+        try:
+            player = await state.voice.create_local_song_player(song)
+            await state.voice.request_song(ctx.message, player)
+        except Exception as e:
+            await self.bot.say(embed=MessageBuilder.create_error(e))
 
     # ================================================================================================================ #

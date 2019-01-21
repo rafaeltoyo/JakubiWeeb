@@ -5,6 +5,7 @@ import asyncio
 import discord
 from discord.ext import commands
 
+from .queue import SongQueue
 from .request import Request, YTRequest, LMRequest
 from ....enums import *
 from ....utils import *
@@ -17,7 +18,7 @@ class VoiceState:
     #   Constructor
     # ---------------------------------------------------------------------------------------------------------------- #
 
-    def __init__(self, bot: commands.Bot, musics: LocalMusicController = None):
+    def __init__(self, server: discord.Server, bot: commands.Bot, musics: LocalMusicController = None):
         """
         Voice State:
         When the bot connect in some server, we create a state for this server.
@@ -27,6 +28,8 @@ class VoiceState:
         # ------------------------------------------------------------------------------------------------------------ #
         #   External objects
 
+        # state server
+        self.server = server
         # bot instance
         self.bot = bot
         # local music controller
@@ -53,7 +56,7 @@ class VoiceState:
         # flag to access songs queue
         self.play_next_song = asyncio.Event()
         # songs queue
-        self.songs = asyncio.Queue()
+        self.songs = SongQueue()
 
         # ------------------------------------------------------------------------------------------------------------ #
         #   Skip
@@ -101,6 +104,10 @@ class VoiceState:
     # ---------------------------------------------------------------------------------------------------------------- #
 
     @property
+    def current(self):
+        return self.__current
+
+    @property
     def player(self):
         return self.__current.player
 
@@ -113,7 +120,7 @@ class VoiceState:
         if 0 < v < 1:
             self.__volume = v
 
-    def current_song(self):
+    def current_song_search(self):
         if self.is_playing():
             return self.player.search
         return ""
@@ -150,6 +157,44 @@ class VoiceState:
     #   Audio Player user functions
     # ---------------------------------------------------------------------------------------------------------------- #
 
+    async def create_local_song_player(self, search_term: str):
+        try:
+            music = self.musics.search(search_term)
+            if music is None:
+                raise CustomError(EnumMessages.ERROR_NOT_FOUND)
+            player = self.__voice.create_ffmpeg_player(music.filename, after=self.toggle_next)
+            player.title = music.full_title
+            player.artist = music.artists
+            player.duration = music.duration
+            player.search = music.name + " " + music.artists
+            player.download_url = music.idt
+            return player
+        except Exception as e:
+            error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
+            LogManager().err.println(error)
+            raise CustomError(EnumMessages.ERROR_NOT_FOUND)
+
+    async def random_local_song_player(self):
+        return await self.create_local_song_player(str(rnd.randint(1, self.musics.num_music)))
+
+    async def create_ytdl_song_player(self, search_term: str):
+        try:
+            opts = {'default_search': 'auto', 'quiet': True}
+            player = await self.__voice.create_ytdl_player(search_term, ytdl_options=opts, after=self.toggle_next)
+            player.search = player.title
+            return player
+        except Exception as e:
+            error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
+            LogManager().err.println(error)
+            raise CustomError(EnumMessages.ERROR_NOT_FOUND)
+
+    async def __remake_player(self, player: discord.voice_client.StreamPlayer):
+
+        if hasattr(player, 'yt'):
+            return await self.create_ytdl_song_player(player.download_url)
+        else:
+            return await self.create_local_song_player(player.download_url)
+
     async def request_song(self, message: discord.Message, player: discord.voice_client.StreamPlayer):
 
         # Create a request
@@ -159,71 +204,12 @@ class VoiceState:
             entry = LMRequest(message, player)
 
         # Playing a songs?
-        if not self.songs.empty() or self.is_playing():
+        if not self.songs.stopped() or self.is_playing():
             entry.enqueued_message = await self.bot.send_message(message.channel, embed=entry.message_enqueued())
 
         # Save the request
-        await self.songs.put(entry)
-
-    async def fn_request_yt_song(self, message: discord.Message, search: str):
-        """
-        Request a song with YoutubeDL
-        The list of supported sites can be found here:
-        https://rg3.github.io/youtube-dl/supportedsites.html
-        :param message: Requester message
-        :param search: Requested song
-        :return: Success
-        """
-        opts = {'default_search': 'auto', 'quiet': True}
-
-        try:
-            player = await self.__voice.create_ytdl_player(search, ytdl_options=opts, after=self.toggle_next)
-            player.search = player.title
-        except Exception as e:
-            error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
-            await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
-            return False
-        await self.request_song(message, player)
-        return True
-
-    async def fn_request_local_song(self, message: discord.Message, search: str):
-        """
-        Request a song from SQLite3 database
-        :param message: Requester message
-        :param search: Requested song
-        :return: Success
-        """
-        if self.musics is None or self.musics.num_music <= 0:
-            await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(EnumMessages.ERROR_MSC_CTRL))
-            return
-
-        try:
-            music = self.musics.search(search)
-            if music is None:
-                raise LocalMusicNotFoundException()
-            player = self.__voice.create_ffmpeg_player(music.filename, after=self.toggle_next)
-            player.title = music.full_title
-            player.artist = music.artists
-            player.duration = music.duration
-            player.search = music.name + " " + music.artists
-        except Exception as e:
-            error = "An error occurred while processing this request: ```py\n{}: {}\n```".format(type(e).__name__, e)
-            await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(error))
-            return False
-        await self.request_song(message, player)
-        return True
-
-    async def fn_request_random_local_song(self, message: discord.Message):
-        """
-        Request a random song from SQLite3 database
-        :param message: Requester message
-        :param search: Requested song
-        :return: Success
-        """
-        if self.musics is None or self.musics.num_music <= 0:
-            await self.bot.send_message(message.channel, embed=MessageBuilder.create_error(EnumMessages.ERROR_MSC_CTRL))
-            return
-        await self.fn_request_local_song(message, str(rnd.randint(1, self.musics.num_music)))
+        LogManager().out.println("Song request - " + entry.player.title)
+        await self.songs.add(entry)
 
     async def fn_autoplay(self, message: discord.Message):
         if self.musics is None or self.musics.num_music <= 0:
@@ -303,11 +289,23 @@ class VoiceState:
 
         self.__skip_lock.release()
 
-    async def fn_now_playing(self):
-        if self.is_playing():
-            await self.bot.say(embed=self.__current.message_playing())
+    async def fn_goto_queue(self, item_id):
+        try:
+            await self.songs.goto(item_id)
+        except IndexError as e:
+            await self.bot.say(embed=MessageBuilder.create_error("ID inválido!"))
+            print(e)
+        except RuntimeError as e:
+            await self.bot.say(embed=MessageBuilder.create_error("Fila vazia!"))
+            print(e)
         else:
-            await self.bot.say(embed=MessageBuilder.create_alert(EnumMessages.CONTENT_SKIP_WTOUT_MS))
+            self.skip()
+
+    async def fn_show_queue(self, page=1):
+        if self.songs.size == 0:
+            await self.bot.say(embed=MessageBuilder.create_error("Empty queue!"))
+        else:
+            await self.bot.say(embed=MessageBuilder.create_info("Queue:", self.songs.display(page=page)))
 
     # ================================================================================================================ #
     #   Audio Player behavior
@@ -318,23 +316,32 @@ class VoiceState:
 
     async def __prepare_autoplay(self):
         # Empty songs queue and autoplay active?
-        if self.songs.empty() and self.__autoplay is not None and not self.is_playing():
+        if self.songs.stopped() and self.__autoplay is not None and not self.is_playing():
             # Request a random song
-            await self.fn_request_random_local_song(self.__autoplay)
+            print("AUTOPLAY!")
+            player = await self.random_local_song_player()
+            await self.request_song(self.__autoplay, player)
 
     async def __prepare_song(self) -> Request:
         # Empty songs queue and autoplay active?
         await self.__prepare_autoplay()
 
-        current = await self.songs.get()  # type: Request
+        current = None
+        while current is None:
+            print("Pegando música ...")
+            print("Queue: \n" + str(self.songs))
+            current = await self.songs.wait()  # type: Request
+            if current.player.is_done():
+                current.player = await self.__remake_player(current.player)
+            print("Liberado!")
 
         # check if exists and delete "enqueued" message
         if current.enqueued_message is not None:
             await self.bot.delete_message(current.enqueued_message)
 
-        # delete request message
-        if self.__autoplay is None or self.__autoplay.id != current.message.id:
-            await self.bot.delete_message(current.message)
+        # delete request message (it will disable go back queue function)
+        # if self.__autoplay is None or self.__autoplay.id != current.message.id:
+        #    await self.bot.delete_message(current.message)
 
         # set user volume
         current.player.volume = self.__volume
