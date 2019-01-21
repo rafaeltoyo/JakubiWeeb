@@ -17,8 +17,22 @@ class AnimeLyrics(LyricsWebsite):
     def get_lyrics(self, url: str) -> Lyrics:
         soup = BeautifulSoup(requests.get(url).text, 'html5lib')
 
+        lyrics = ""
+        for div in soup.find_all('td', {'class': 'romaji'}):
+            div.find('dt').extract()
+            lyrics += div.find('span', {'class', 'lyrics'}).text.replace('\xa0', ' ').strip() + "\n\n"
+
+        if len(lyrics.replace('\n', '')) == 0:
+            top_split = soup.find('div', {'class', 'centerbox'}).find('dt').text
+
+            [i.extract() for i in soup.find('div', {'class', 'centerbox'}).find_all('p')]
+            [i.extract() for i in soup.find('div', {'class', 'centerbox'}).find_all('script')]
+
+            first_split = soup.find('div', {'class', 'centerbox'}).text.split(top_split)
+            if len(first_split) < 2:
+                return None
+            lyrics = first_split[1].replace('\xa0', ' ').strip()
+
         title = soup.find_all('h1')[1].get_text()
-        lyrics = ', '.join(
-            [div.text.replace('\xa0', ' ').strip() for div in soup.find_all('td', {'class': 'romaji'})])
         content = title + "\n\n" + lyrics
         return Lyrics(content, url)
